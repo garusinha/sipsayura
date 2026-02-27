@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Sipsayura Titan V24.1</title>
+    <title>Sipsayura Titan V25</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <link
@@ -26,10 +26,7 @@
         margin: 0;
         background: var(--bg);
         color: var(--dk);
-        -webkit-font-smoothing: antialiased;
       }
-
-      /* Branding */
       header {
         background: var(--dk);
         color: white;
@@ -42,8 +39,6 @@
         display: block;
         margin-bottom: 5px;
       }
-
-      /* Navigation */
       nav {
         background: white;
         padding: 12px;
@@ -63,14 +58,11 @@
         background: transparent;
         color: #64748b;
         cursor: pointer;
-        transition: 0.3s;
       }
       .nav-btn.active {
         background: var(--p);
         color: white;
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
       }
-
       .container {
         padding: 15px;
         max-width: 600px;
@@ -85,8 +77,6 @@
         margin-bottom: 15px;
         border: 1px solid #e2e8f0;
       }
-
-      /* Inputs */
       label {
         font-weight: 700;
         font-size: 0.8rem;
@@ -114,8 +104,6 @@
         border-color: var(--d);
         background: #fff1f2;
       }
-
-      /* Student Row */
       .std-row {
         display: flex;
         align-items: center;
@@ -125,10 +113,6 @@
         border-radius: 18px;
         margin-bottom: 8px;
         border: 1px solid #f1f5f9;
-        transition: 0.2s;
-      }
-      .std-row:active {
-        background: #f8fafc;
       }
       .badge {
         font-size: 0.65rem;
@@ -147,8 +131,6 @@
         background: #fee2e2;
         color: #b91c1c;
       }
-
-      /* Notifications */
       #toaster {
         display: none;
         position: fixed;
@@ -163,8 +145,6 @@
         z-index: 5000;
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
       }
-
-      /* Buttons */
       .btn {
         border: none;
         padding: 16px;
@@ -188,8 +168,6 @@
         background: var(--s);
         color: white;
       }
-
-      /* Overlays */
       .overlay {
         display: none;
         position: fixed;
@@ -206,10 +184,7 @@
         margin: 20px auto;
         border-radius: 32px;
         padding: 25px;
-        position: relative;
       }
-
-      /* Summary Table */
       .sum-table {
         width: 100%;
         border-collapse: collapse;
@@ -234,6 +209,15 @@
         color: #ef4444;
         font-weight: 800;
       }
+      .finance-box {
+        padding: 15px;
+        background: var(--dk);
+        color: white;
+        border-radius: 18px;
+        margin-top: 15px;
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
     </style>
   </head>
   <body>
@@ -244,7 +228,7 @@
       <h1 style="margin: 0; letter-spacing: -1px">
         SIPSAYURA <span style="color: var(--p)">TITAN</span>
       </h1>
-      <small style="opacity: 0.7">Enterprise Class Management V24.1</small>
+      <small style="opacity: 0.7">Enterprise V25 | 20% Fee Logic</small>
     </header>
 
     <nav id="app-nav" style="display: none">
@@ -257,7 +241,7 @@
 
     <div class="container">
       <div id="v-grades">
-        <h2 style="text-align: center; margin: 40px 0">Select Class Grade</h2>
+        <h2 style="text-align: center; margin: 40px 0">Select Grade</h2>
         <div
           id="dom-grades"
           style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"
@@ -276,38 +260,33 @@
 
       <div id="v-dash" style="display: none">
         <h3 id="lbl-dash" style="text-align: center; color: var(--p)"></h3>
-
         <div id="tab-att">
           <div class="card">
-            <label>Attendance Date</label>
+            <label>Date</label>
             <input type="date" id="att-date" onchange="render()" />
-
-            <label>Quick Search & Mark</label>
+            <label>Search & Mark</label>
             <input
               type="text"
               id="att-q"
-              placeholder="Type student name..."
+              placeholder="Search student..."
               oninput="render()"
             />
           </div>
-
           <button class="btn btn-dk" onclick="openSummaryWindow()">
             📊 View Daily Summary
           </button>
           <button class="btn btn-s" onclick="saveBulkAttendance()">
-            ✔️ Save All (Mark Absentees)
+            ✔️ Save & Mark Absentees
           </button>
-
           <div id="dom-list" style="margin-top: 20px"></div>
         </div>
 
         <div id="tab-reg" style="display: none">
           <div class="card">
-            <h3>Student Enrollment</h3>
-            <label>Full Name</label>
-            <input type="text" id="reg-n" placeholder="Enter name" />
-
-            <label>Parent Phone (Sri Lanka)</label>
+            <h3>Enroll Student</h3>
+            <label>Name</label>
+            <input type="text" id="reg-n" placeholder="Name" />
+            <label>SL Phone (07XXXXXXXX)</label>
             <input
               type="tel"
               id="reg-ph"
@@ -322,12 +301,9 @@
                 margin-top: -10px;
                 margin-bottom: 10px;
               "
-              >Must be a valid 10-digit SL number.</small
+              >Invalid SL Number.</small
             >
-
-            <button class="btn btn-p" onclick="register()">
-              Confirm & Generate ID
-            </button>
+            <button class="btn btn-p" onclick="register()">Add Student</button>
           </div>
         </div>
       </div>
@@ -340,15 +316,11 @@
     <div id="s-overlay" class="overlay">
       <div class="modal" style="max-width: 600px">
         <h2 style="margin: 0">Class Daily Report</h2>
-        <p
-          id="sum-meta"
-          style="color: #64748b; font-size: 0.85rem; margin-top: 5px"
-        ></p>
-
+        <p id="sum-meta" style="color: #64748b; font-size: 0.85rem"></p>
         <div
           id="sum-table-area"
           style="
-            max-height: 350px;
+            max-height: 300px;
             overflow-y: auto;
             margin-top: 15px;
             border: 1px solid #eee;
@@ -356,37 +328,47 @@
           "
         ></div>
 
-        <div
-          style="
-            padding: 18px;
-            background: var(--dk);
-            color: white;
-            border-radius: 18px;
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          "
-        >
-          <span style="font-weight: 600">TOTAL CASH COLLECTED:</span>
-          <b id="sum-total-cash" style="font-size: 1.2rem">Rs.0</b>
+        <div class="finance-box">
+          <div style="display: flex; justify-content: space-between">
+            <span>Total Collection:</span> <b id="sum-total">Rs.0</b>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              color: #fb7185;
+            "
+          >
+            <span>Institute Charge (20%):</span> <b id="sum-inst">Rs.0</b>
+          </div>
+          <hr style="opacity: 0.2" />
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              font-size: 1.1rem;
+              color: #34d399;
+            "
+          >
+            <span>TEACHER FEE:</span> <b id="sum-teacher">Rs.0</b>
+          </div>
         </div>
 
         <button class="btn btn-p" onclick="shareSummary()">
-          📤 Share / Print PDF Report
+          📤 Share / Print PDF
         </button>
         <button
           class="btn btn-dk"
           onclick="document.getElementById('s-overlay').style.display = 'none'"
         >
-          Close Preview
+          Close
         </button>
       </div>
     </div>
 
     <script>
       const { jsPDF } = window.jspdf;
-      let db = JSON.parse(localStorage.getItem("sip_v24_1")) || {
+      let db = JSON.parse(localStorage.getItem("sip_v25")) || {
         students: [],
         att: {},
         fees: {},
@@ -394,21 +376,17 @@
       let cg = "",
         cs = "";
 
-      const saveDB = () =>
-        localStorage.setItem("sip_v24_1", JSON.stringify(db));
+      const saveDB = () => localStorage.setItem("sip_v25", JSON.stringify(db));
 
       function init() {
-        const gs = ["6", "7", "8", "9", "10", "11"];
-        document.getElementById("dom-grades").innerHTML = gs
-          .map(
-            (g) =>
-              `<button class="card" style="font-weight:800; text-align:center;" onclick="selG('${g}')">Grade ${g}</button>`,
-          )
-          .join("");
+        ["6", "7", "8", "9", "10", "11"].forEach((g) => {
+          document.getElementById("dom-grades").innerHTML +=
+            `<button class="card" style="font-weight:800; text-align:center;" onclick="selG('${g}')">Grade ${g}</button>`;
+        });
       }
 
       function selG(g) {
-        if (prompt("System PIN:") === "1234") {
+        if (prompt("PIN:") === "1234") {
           cg = g;
           document.getElementById("lbl-grade").innerText = "Grade " + g;
           showV("v-subs");
@@ -444,7 +422,6 @@
         }
       }
 
-      // --- LOGIC: Sri Lankan Phone Validation ---
       function checkPh(input) {
         const regex = /^(07[01245678]\d{7})$/;
         const err = document.getElementById("lbl-ph-err");
@@ -463,10 +440,7 @@
         const n = document.getElementById("reg-n").value,
           ph = document.getElementById("reg-ph").value;
         if (!n || !ph || !checkPh(document.getElementById("reg-ph")))
-          return alert(
-            "Please enter a valid Name and SL Phone Number (07XXXXXXXX)",
-          );
-
+          return alert("Fill data correctly.");
         const id = `${cs}-${(db.students.filter((s) => s.subject === cs).length + 1).toString().padStart(3, "0")}`;
         db.students.push({
           id,
@@ -478,7 +452,7 @@
           joinY: new Date().getFullYear(),
         });
         saveDB();
-        showMsg("Student Registered: " + id);
+        showMsg("Student Added: " + id);
         document.getElementById("reg-n").value = "";
         document.getElementById("reg-ph").value = "";
       }
@@ -493,9 +467,6 @@
       function render() {
         const date = document.getElementById("att-date").value;
         const q = document.getElementById("att-q").value.toLowerCase();
-        const m = new Date(date).getMonth(),
-          y = new Date(date).getFullYear();
-
         const students = db.students.filter(
           (s) =>
             s.grade === cg &&
@@ -504,6 +475,8 @@
               s.id.toLowerCase().includes(q)),
         );
         const attData = db.att[cs + cg + date] || { present: [], absent: [] };
+        const m = new Date(date).getMonth(),
+          y = new Date(date).getFullYear();
         const paid = db.fees[cs + cg + m + y] || [];
 
         document.getElementById("dom-list").innerHTML = students
@@ -514,8 +487,8 @@
             <div class="std-row">
                 <div onclick="openProfile('${s.id}')" style="flex:1;">
                     <span class="badge ${isPaid ? "b-paid" : "b-due"}">${isPaid ? "PAID" : "FEE DUE"}</span>
-                    <b style="display:block; font-size:1.05rem;">${s.name}</b>
-                    <small style="color:#64748b">${s.id}</small>
+                    <b style="display:block;">${s.name}</b>
+                    <small>${s.id}</small>
                 </div>
                 <input type="checkbox" style="width:34px; height:34px;" ${isP ? "checked" : ""} onchange="markSingle('${s.id}','${s.name}', this)">
             </div>`;
@@ -523,17 +496,15 @@
           .join("");
       }
 
-      // --- LOGIC: Quick Search & Mark ---
       function markSingle(id, name, chk) {
         const date = document.getElementById("att-date").value;
         const key = cs + cg + date;
         if (!db.att[key]) db.att[key] = { present: [], absent: [] };
-
         if (chk.checked) {
-          if (!db.att[key].present.includes(id)) db.att[key].present.push(id);
+          db.att[key].present.push(id);
           db.att[key].absent = db.att[key].absent.filter((x) => x !== id);
-          showMsg(name + " - Present ✅");
-          document.getElementById("att-q").value = ""; // Auto-clear search
+          showMsg(name + " Present ✅");
+          document.getElementById("att-q").value = "";
           setTimeout(render, 400);
         } else {
           db.att[key].present = db.att[key].present.filter((x) => x !== id);
@@ -553,11 +524,10 @@
           .filter((s) => !db.att[key].present.includes(s.id))
           .map((s) => s.id);
         saveDB();
-        showMsg("Attendance finalized for the day.");
+        showMsg("Daily Records Finalized!");
         render();
       }
 
-      // --- LOGIC: Summary Window & PDF ---
       function openSummaryWindow() {
         const date = document.getElementById("att-date").value;
         const key = cs + cg + date;
@@ -569,41 +539,38 @@
           (s) => s.grade === cg && s.subject === cs,
         );
 
-        document.getElementById("sum-meta").innerText =
-          `Subject: ${cs} | Grade: ${cg} | Date: ${date}`;
-
         let total = 0;
-        let html = `<table class="sum-table" id="report-table">
-            <thead><tr><th>ID</th><th>Student Name</th><th>Status</th><th>Fee</th></tr></thead>
-            <tbody>`;
-
+        let html = `<table class="sum-table" id="report-table"><thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Fee</th></tr></thead><tbody>`;
         ss.forEach((s) => {
           const isP = att.present.includes(s.id);
           const isPaid = paid.includes(s.id);
           const amt = isP && isPaid ? 1000 : 0;
           total += amt;
-          html += `<tr>
-                <td>${s.id}</td>
-                <td>${s.name}</td>
-                <td class="${isP ? "status-p" : "status-a"}">${isP ? "PRESENT" : "ABSENT"}</td>
-                <td>${amt}</td>
-            </tr>`;
+          html += `<tr><td>${s.id}</td><td>${s.name}</td><td class="${isP ? "status-p" : "status-a"}">${isP ? "PRESENT" : "ABSENT"}</td><td>${amt}</td></tr>`;
         });
         html += `</tbody></table>`;
 
+        const instCharge = total * 0.2;
+        const teacherFee = total - instCharge;
+
+        document.getElementById("sum-meta").innerText =
+          `Subject: ${cs} | Grade: ${cg} | Date: ${date}`;
         document.getElementById("sum-table-area").innerHTML = html;
-        document.getElementById("sum-total-cash").innerText = "Rs. " + total;
+        document.getElementById("sum-total").innerText = "Rs. " + total;
+        document.getElementById("sum-inst").innerText = "Rs. " + instCharge;
+        document.getElementById("sum-teacher").innerText = "Rs. " + teacherFee;
         document.getElementById("s-overlay").style.display = "block";
       }
 
       async function shareSummary() {
         const date = document.getElementById("att-date").value;
-        const totalAmount = document.getElementById("sum-total-cash").innerText;
-        const doc = new jsPDF();
+        const total = document.getElementById("sum-total").innerText;
+        const inst = document.getElementById("sum-inst").innerText;
+        const teacher = document.getElementById("sum-teacher").innerText;
 
+        const doc = new jsPDF();
         doc.setFontSize(20);
         doc.text("SIPSAYURA CLASS REPORT", 105, 20, { align: "center" });
-
         doc.setFontSize(10);
         doc.text(`DATE: ${date} | SUBJECT: ${cs} | GRADE: ${cg}`, 14, 30);
 
@@ -614,8 +581,12 @@
           didDrawPage: function (data) {
             let finalY = data.cursor.y;
             doc.setFont(undefined, "bold");
-            doc.setFontSize(14);
-            doc.text(`TOTAL COLLECTED: ${totalAmount}`, 14, finalY + 15);
+            doc.setFontSize(11);
+            doc.text(`Total Collection: ${total}`, 14, finalY + 10);
+            doc.text(`Institute Charge (20%): ${inst}`, 14, finalY + 17);
+            doc.setFontSize(13);
+            doc.setTextColor(16, 185, 129); // Green color
+            doc.text(`TEACHER FINAL FEE: ${teacher}`, 14, finalY + 27);
           },
         });
 
@@ -623,15 +594,14 @@
         const file = new File([blob], `Report_${date}.pdf`, {
           type: "application/pdf",
         });
-
         if (navigator.share) {
           await navigator.share({
             files: [file],
             title: "Daily Report",
-            text: "Sipsayura Daily Summary",
+            text: "Sipsayura Summary",
           });
         } else {
-          doc.save(`Sipsayura_Report_${date}.pdf`);
+          doc.save(`Report_${date}.pdf`);
         }
       }
 
@@ -645,17 +615,14 @@
           if (k.startsWith(cs + cg) && db.att[k].present.includes(id))
             h.push(k.replace(cs + cg, ""));
         });
-
         document.getElementById("p-content").innerHTML = `
-            <h2 style="margin:0">${s.name}</h2>
-            <p style="color:#64748b">ID: ${s.id} | Parent: ${s.phone}</p>
-            <div class="card" style="background:${isPaid ? "#f0fdf4" : "#fff1f2"}; border:none; margin-top:15px;">
-                <b>Monthly Fee Status:</b> ${isPaid ? "✅ PAID" : "❌ PENDING"}
-                <button class="btn btn-p" onclick="pay('${id}')">MARK AS PAID (RS.1000)</button>
+            <h2>${s.name}</h2><p>ID: ${s.id} | Parent: ${s.phone}</p>
+            <div class="card" style="background:${isPaid ? "#f0fdf4" : "#fff1f2"}; border:none;">
+                <b>Fee Status:</b> ${isPaid ? "PAID" : "PENDING"}
+                <button class="btn btn-p" onclick="pay('${id}')">MARK PAID (RS.1000)</button>
             </div>
-            <h4>Recent Attendance:</h4>
-            <div style="font-size:0.85rem; color:#475569; line-height:1.6;">${h.length ? h.join(", ") : "No presence records found for this month."}</div>
-            <button class="btn btn-dk" style="margin-top:20px;" onclick="document.getElementById('p-overlay').style.display='none'">Close Profile</button>
+            <h4>History:</h4><div style="font-size:0.8rem">${h.join(", ") || "No records"}</div>
+            <button class="btn btn-dk" onclick="document.getElementById('p-overlay').style.display='none'">Close</button>
         `;
         document.getElementById("p-overlay").style.display = "block";
       }
