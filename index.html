@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Sipsayura Titan V23</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --p: #4f46e5;
+        --s: #10b981;
+        --d: #ef4444;
+        --dk: #0f172a;
+        --bg: #f1f5f9;
+      }
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        margin: 0;
+        background: var(--bg);
+        color: var(--dk);
+      }
+      header {
+        background: var(--dk);
+        color: white;
+        padding: 25px;
+        text-align: center;
+        border-bottom: 5px solid var(--p);
+      }
+      .app-icon {
+        font-size: 2.5rem;
+        display: block;
+      }
+
+      nav {
+        background: white;
+        padding: 12px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+      .nav-btn {
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-weight: 700;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        cursor: pointer;
+      }
+      .nav-btn.active {
+        background: var(--p);
+        color: white;
+      }
+
+      .container {
+        padding: 15px;
+        max-width: 600px;
+        margin: auto;
+        padding-bottom: 100px;
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 24px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+        margin-bottom: 15px;
+        border: 1px solid #e2e8f0;
+      }
+
+      input {
+        width: 100%;
+        padding: 14px;
+        border-radius: 14px;
+        border: 2px solid #e2e8f0;
+        font-size: 1rem;
+        box-sizing: border-box;
+        transition: 0.3s;
+      }
+      input:focus {
+        border-color: var(--p);
+        outline: none;
+        background: #f5f3ff;
+      }
+      input.error {
+        border-color: var(--d);
+        background: #fff1f2;
+      }
+
+      .std-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px;
+        background: white;
+        border-radius: 16px;
+        margin-bottom: 8px;
+        border: 1px solid #f1f5f9;
+      }
+      .badge {
+        font-size: 0.65rem;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        display: inline-block;
+      }
+      .b-paid {
+        background: #dcfce7;
+        color: #15803d;
+      }
+      .b-due {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+
+      #toaster {
+        display: none;
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--dk);
+        color: white;
+        padding: 12px 25px;
+        border-radius: 50px;
+        font-weight: 700;
+        z-index: 4000;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn {
+        border: none;
+        padding: 16px;
+        border-radius: 14px;
+        font-weight: 800;
+        cursor: pointer;
+        width: 100%;
+        transition: 0.3s;
+        text-transform: uppercase;
+        margin-top: 10px;
+      }
+      .btn-p {
+        background: var(--p);
+        color: white;
+      }
+      .btn-dk {
+        background: var(--dk);
+        color: white;
+      }
+      .btn-s {
+        background: var(--s);
+        color: white;
+      }
+
+      .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.95);
+        z-index: 3000;
+        padding: 20px;
+        overflow-y: auto;
+        backdrop-filter: blur(10px);
+      }
+      .modal {
+        background: white;
+        max-width: 500px;
+        margin: 20px auto;
+        border-radius: 30px;
+        padding: 25px;
+      }
+
+      /* Summary Table UI */
+      .sum-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 0.85rem;
+      }
+      .sum-table th {
+        text-align: left;
+        padding: 10px;
+        border-bottom: 2px solid #f1f5f9;
+      }
+      .sum-table td {
+        padding: 10px;
+        border-bottom: 1px solid #f8fafc;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="toaster">Updated!</div>
+
+    <header>
+      <span class="app-icon">🎓</span>
+      <h1 style="margin: 0">
+        SIPSAYURA <span style="color: var(--p)">V23</span>
+      </h1>
+    </header>
+
+    <nav id="app-nav" style="display: none">
+      <button class="nav-btn active" onclick="setTab('att', this)">
+        Attendance
+      </button>
+      <button class="nav-btn" onclick="setTab('reg', this)">Register</button>
+      <button class="nav-btn" onclick="location.reload()">Exit</button>
+    </nav>
+
+    <div class="container">
+      <div id="v-grades">
+        <h2 style="text-align: center; margin-top: 40px">Choose Grade</h2>
+        <div
+          id="dom-grades"
+          style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"
+        ></div>
+      </div>
+
+      <div id="v-subs" style="display: none">
+        <h2 id="lbl-grade" style="text-align: center"></h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+          <button class="card" onclick="enter('MATH')">📐 Math</button>
+          <button class="card" onclick="enter('SCI')">🔬 Science</button>
+          <button class="card" onclick="enter('SIN')">✍️ Sinhala</button>
+          <button class="card" onclick="enter('ENG')">🔤 English</button>
+        </div>
+      </div>
+
+      <div id="v-dash" style="display: none">
+        <h3 id="lbl-dash" style="text-align: center; color: var(--p)"></h3>
+
+        <div id="tab-att">
+          <div class="card">
+            <label style="font-weight: 700; color: var(--p)">Class Date</label>
+            <input
+              type="date"
+              id="att-date"
+              onchange="render()"
+              style="margin-bottom: 15px"
+            />
+            <input
+              type="text"
+              id="att-q"
+              placeholder="🔍 Search Name or ID..."
+              oninput="render()"
+            />
+          </div>
+
+          <button class="btn btn-dk" onclick="openSummaryWindow()">
+            📊 VIEW DAILY SUMMARY
+          </button>
+          <button class="btn btn-s" onclick="saveBulkAttendance()">
+            ✔️ SAVE & MARK ABSENTEES
+          </button>
+
+          <div id="dom-list" style="margin-top: 20px"></div>
+        </div>
+
+        <div id="tab-reg" style="display: none">
+          <div class="card">
+            <h3>Enroll Student</h3>
+            <input
+              type="text"
+              id="reg-n"
+              placeholder="Student Name"
+              style="margin-bottom: 12px"
+            />
+            <label
+              id="lbl-ph-err"
+              style="color: var(--d); font-size: 0.7rem; display: none"
+              >Invalid Sri Lankan Number (07XXXXXXXX)</label
+            >
+            <input
+              type="tel"
+              id="reg-ph"
+              placeholder="Phone (07XXXXXXXX)"
+              oninput="checkPh(this)"
+            />
+            <button class="btn btn-p" onclick="register()">Add to Class</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="p-overlay" class="overlay">
+      <div class="modal" id="p-content"></div>
+    </div>
+
+    <div id="s-overlay" class="overlay">
+      <div class="modal" style="max-width: 600px">
+        <h2 style="margin: 0">Daily Report</h2>
+        <p id="sum-meta" style="color: #64748b; font-size: 0.8rem"></p>
+        <div
+          id="sum-table-area"
+          style="max-height: 400px; overflow-y: auto; margin-top: 15px"
+        ></div>
+        <div
+          style="
+            padding: 15px;
+            background: var(--dk);
+            color: white;
+            border-radius: 15px;
+            margin-top: 10px;
+          "
+        >
+          Total Collection: <b id="sum-total-cash">Rs.0</b>
+        </div>
+        <button class="btn btn-p" onclick="shareSummary()">
+          📤 SHARE / PRINT PDF
+        </button>
+        <button
+          class="btn btn-dk"
+          onclick="document.getElementById('s-overlay').style.display = 'none'"
+        >
+          CLOSE
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const { jsPDF } = window.jspdf;
+      let db = JSON.parse(localStorage.getItem("sip_v23")) || {
+        students: [],
+        att: {},
+        fees: {},
+      };
+      let cg = "",
+        cs = "";
+
+      const saveDB = () => localStorage.setItem("sip_v23", JSON.stringify(db));
+
+      function init() {
+        const gs = ["6", "7", "8", "9", "10", "11"];
+        document.getElementById("dom-grades").innerHTML = gs
+          .map(
+            (g) =>
+              `<button class="card" onclick="selG('${g}')">Grade ${g}</button>`,
+          )
+          .join("");
+      }
+
+      function selG(g) {
+        if (prompt("PIN:") === "1234") {
+          cg = g;
+          document.getElementById("lbl-grade").innerText = "Grade " + g;
+          showV("v-subs");
+        }
+      }
+
+      function enter(s) {
+        cs = s;
+        showV("v-dash");
+        document.getElementById("app-nav").style.display = "flex";
+        setTab("att", document.querySelector(".nav-btn"));
+      }
+
+      function showV(id) {
+        ["v-grades", "v-subs", "v-dash"].forEach(
+          (v) => (document.getElementById(v).style.display = "none"),
+        );
+        document.getElementById(id).style.display = "block";
+      }
+
+      function setTab(t, el) {
+        ["att", "reg"].forEach(
+          (i) => (document.getElementById("tab-" + i).style.display = "none"),
+        );
+        document.getElementById("tab-" + t).style.display = "block";
+        document
+          .querySelectorAll(".nav-btn")
+          .forEach((b) => b.classList.remove("active"));
+        el.classList.add("active");
+        if (t === "att") {
+          document.getElementById("att-date").valueAsDate = new Date();
+          render();
+        }
+      }
+
+      // PHONE VALIDATION FIX
+      function checkPh(input) {
+        const regex = /^(07[01245678]\d{7})$/;
+        const err = document.getElementById("lbl-ph-err");
+        if (!regex.test(input.value) && input.value !== "") {
+          input.classList.add("error");
+          err.style.display = "block";
+          return false;
+        } else {
+          input.classList.remove("error");
+          err.style.display = "none";
+          return true;
+        }
+      }
+
+      function register() {
+        const n = document.getElementById("reg-n").value,
+          ph = document.getElementById("reg-ph").value;
+        if (!n || !ph || !checkPh(document.getElementById("reg-ph")))
+          return alert("Valid Name & SL Phone Required");
+        const id = `${cs}-${(db.students.filter((s) => s.subject === cs).length + 1).toString().padStart(3, "0")}`;
+        db.students.push({
+          id,
+          name: n,
+          phone: ph,
+          grade: cg,
+          subject: cs,
+          joinM: new Date().getMonth(),
+          joinY: new Date().getFullYear(),
+        });
+        saveDB();
+        alert("Saved: " + id);
+        document.getElementById("reg-n").value = "";
+        document.getElementById("reg-ph").value = "";
+      }
+
+      function showMsg(txt) {
+        const t = document.getElementById("toaster");
+        t.innerText = txt;
+        t.style.display = "block";
+        setTimeout(() => (t.style.display = "none"), 1500);
+      }
+
+      function render() {
+        const date = document.getElementById("att-date").value;
+        const q = document.getElementById("att-q").value.toLowerCase();
+        const m = new Date(date).getMonth(),
+          y = new Date(date).getFullYear();
+
+        const students = db.students.filter(
+          (s) =>
+            s.grade === cg &&
+            s.subject === cs &&
+            (s.name.toLowerCase().includes(q) ||
+              s.id.toLowerCase().includes(q)),
+        );
+        const attData = db.att[cs + cg + date] || { present: [], absent: [] };
+        const paid = db.fees[cs + cg + m + y] || [];
+
+        document.getElementById("dom-list").innerHTML = students
+          .map((s) => {
+            const isP = attData.present.includes(s.id);
+            const isPaid = paid.includes(s.id);
+            return `
+            <div class="std-row">
+                <div onclick="openProfile('${s.id}')" style="flex:1;">
+                    <span class="badge ${isPaid ? "b-paid" : "b-due"}">${isPaid ? "PAID" : "DUE"}</span>
+                    <b style="display:block;">${s.name}</b>
+                    <small>${s.id}</small>
+                </div>
+                <input type="checkbox" style="width:32px; height:32px;" ${isP ? "checked" : ""} onchange="markSingle('${s.id}','${s.name}', this)">
+            </div>`;
+          })
+          .join("");
+      }
+
+      function markSingle(id, name, chk) {
+        const date = document.getElementById("att-date").value;
+        const key = cs + cg + date;
+        if (!db.att[key]) db.att[key] = { present: [], absent: [] };
+
+        if (chk.checked) {
+          db.att[key].present.push(id);
+          db.att[key].absent = db.att[key].absent.filter((x) => x !== id);
+          showMsg(name + " Marked!");
+          document.getElementById("att-q").value = ""; // Clear search
+          setTimeout(render, 400);
+        } else {
+          db.att[key].present = db.att[key].present.filter((x) => x !== id);
+          render();
+        }
+        saveDB();
+      }
+
+      function saveBulkAttendance() {
+        const date = document.getElementById("att-date").value;
+        const key = cs + cg + date;
+        const students = db.students.filter(
+          (s) => s.grade === cg && s.subject === cs,
+        );
+        if (!db.att[key]) db.att[key] = { present: [], absent: [] };
+        db.att[key].absent = students
+          .filter((s) => !db.att[key].present.includes(s.id))
+          .map((s) => s.id);
+        saveDB();
+        showMsg("Daily Records Saved!");
+        render();
+      }
+
+      // --- SUMMARY WINDOW LOGIC ---
+      function openSummaryWindow() {
+        const date = document.getElementById("att-date").value;
+        const key = cs + cg + date;
+        const att = db.att[key] || { present: [], absent: [] };
+        const m = new Date(date).getMonth(),
+          y = new Date(date).getFullYear();
+        const paid = db.fees[cs + cg + m + y] || [];
+        const ss = db.students.filter(
+          (s) => s.grade === cg && s.subject === cs,
+        );
+
+        document.getElementById("sum-meta").innerText =
+          `Subject: ${cs} | Grade: ${cg} | Date: ${date}`;
+
+        let total = 0;
+        let html = `<table class="sum-table"><thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Fee</th></tr></thead><tbody>`;
+        ss.forEach((s) => {
+          const isP = att.present.includes(s.id);
+          const isPaid = paid.includes(s.id);
+          if (isP && isPaid) total += 1000;
+          html += `<tr><td>${s.id}</td><td>${s.name}</td><td>${isP ? "✅" : "❌"}</td><td>${isPaid ? "1000" : "0"}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+
+        document.getElementById("sum-table-area").innerHTML = html;
+        document.getElementById("sum-total-cash").innerText = "Rs. " + total;
+        document.getElementById("s-overlay").style.display = "block";
+      }
+
+      async function shareSummary() {
+        const date = document.getElementById("att-date").value;
+        const doc = new jsPDF();
+        doc.text("SIPSAYURA DAILY REPORT", 105, 20, { align: "center" });
+        doc.autoTable({ html: ".sum-table", startY: 30 });
+
+        // This opens the PDF in a way that allows the mobile "Share" menu to work
+        const blob = doc.output("blob");
+        const file = new File([blob], `Report_${date}.pdf`, {
+          type: "application/pdf",
+        });
+
+        if (navigator.share) {
+          await navigator.share({
+            files: [file],
+            title: "Daily Report",
+            text: "Sipsayura Daily Summary",
+          });
+        } else {
+          doc.save(`Sipsayura_${date}.pdf`);
+        }
+      }
+
+      function openProfile(id) {
+        const s = db.students.find((x) => x.id === id);
+        const m = new Date().getMonth(),
+          y = new Date().getFullYear();
+        const isPaid = (db.fees[cs + cg + m + y] || []).includes(id);
+        let h = [];
+        Object.keys(db.att).forEach((k) => {
+          if (k.startsWith(cs + cg) && db.att[k].present.includes(id))
+            h.push(k.replace(cs + cg, ""));
+        });
+
+        document.getElementById("p-content").innerHTML = `
+            <h2>${s.name}</h2><p>ID: ${s.id} | Parent: ${s.phone}</p>
+            <div class="card" style="background:${isPaid ? "#f0fdf4" : "#fff1f2"}; border:none;">
+                <b>Monthly Fee:</b> ${isPaid ? "PAID" : "PENDING"}
+                <button class="btn btn-p" onclick="pay('${id}')">MARK AS PAID (RS.1000)</button>
+            </div>
+            <h4>History:</h4><div style="font-size:0.8rem">${h.join(", ") || "No records"}</div>
+            <button class="btn btn-dk" onclick="document.getElementById('p-overlay').style.display='none'">CLOSE</button>
+        `;
+        document.getElementById("p-overlay").style.display = "block";
+      }
+
+      function pay(id) {
+        const m = new Date().getMonth(),
+          y = new Date().getFullYear();
+        const k = cs + cg + m + y;
+        if (!db.fees[k]) db.fees[k] = [];
+        if (!db.fees[k].includes(id)) db.fees[k].push(id);
+        saveDB();
+        render();
+        openProfile(id);
+      }
+
+      init();
+    </script>
+  </body>
+</html>
