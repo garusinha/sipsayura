@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura Elite - V29 Professional</title>
+    <title>Sipsayura Elite - V30 Master</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -13,24 +13,25 @@
       :root { --p: #4f46e5; --s: #10b981; --d: #f43f5e; --dk: #0f172a; --bg: #f8fafc; }
       body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; background: var(--bg); color: var(--dk); font-size: 13px; -webkit-tap-highlight-color: transparent; }
       
-      /* Login Screen */
+      /* Login Layer */
       #login-screen { position: fixed; inset: 0; background: var(--dk); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; color: white; text-align: center; }
       .login-box { width: 100%; max-width: 320px; }
       .pin-input { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); color: white; text-align: center; font-size: 24px; letter-spacing: 10px; padding: 15px; border-radius: 16px; width: 100%; margin-bottom: 20px; outline: none; }
       
-      /* App Layout */
+      /* Navigation & Header */
       header { background: linear-gradient(135deg, var(--dk) 0%, #1e293b 100%); color: white; padding: 35px 20px; text-align: center; border-radius: 0 0 30px 30px; }
       header .icon { font-size: 45px; display: block; margin-bottom: 10px; }
       nav { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 8px; display: flex; justify-content: space-around; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 1000; }
-      .nav-btn { padding: 10px 15px; border-radius: 12px; font-weight: 700; border: none; background: transparent; color: #64748b; font-size: 12px; }
+      .nav-btn { padding: 10px 15px; border-radius: 12px; font-weight: 700; border: none; background: transparent; color: #64748b; font-size: 12px; cursor: pointer; }
       .nav-btn.active { background: var(--p); color: white; }
       
+      /* Layout Elements */
       .container { padding: 15px; max-width: 500px; margin: auto; padding-bottom: 100px; }
       .card { background: white; padding: 18px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #f1f5f9; }
       .grade-card { background: white; padding: 20px; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; cursor: pointer; }
+      input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #e2e8f0; font-size: 13px; margin-bottom: 12px; box-sizing: border-box; font-family: inherit; }
       
-      input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #e2e8f0; font-size: 13px; margin-bottom: 12px; box-sizing: border-box; }
-      .btn { border: none; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+      .btn { border: none; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
       .btn-p { background: var(--p); color: white; }
       .btn-s { background: var(--s); color: white; }
       .btn-dk { background: var(--dk); color: white; }
@@ -40,13 +41,14 @@
       .badge-paid { background: #dcfce7; color: #166534; }
       .badge-due { background: #fee2e2; color: #991b1b; }
       
+      /* Overlays */
       .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 3000; padding: 15px; backdrop-filter: blur(8px); overflow-y: auto; }
-      .modal { background: white; max-width: 450px; margin: 10px auto; border-radius: 24px; padding: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); }
+      .modal { background: white; max-width: 480px; margin: 10px auto; border-radius: 24px; padding: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); }
       
-      /* Chart */
+      /* Revenue Chart */
       .chart-container { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 10px 0; border-bottom: 2px solid #f1f5f9; }
       .chart-bar { flex: 1; background: var(--p); border-radius: 4px 4px 0 0; position: relative; }
-      .chart-bar:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 8px; background: black; color: white; padding: 2px 4px; border-radius: 4px; white-space: nowrap; }
+      .chart-bar:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 8px; background: black; color: white; padding: 2px 4px; border-radius: 4px; white-space: nowrap; z-index: 10; }
     </style>
   </head>
   <body>
@@ -97,7 +99,7 @@
                 <input type="text" id="att-q" placeholder="Search student name..." oninput="render()" style="margin-bottom:0" />
               </div>
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
-                <button class="btn btn-dk" onclick="openSummary()">📊 Professional Report</button>
+                <button class="btn btn-dk" onclick="openSummary()">📊 Teacher Summary</button>
                 <button class="btn btn-s" onclick="save()">✔️ Cloud Sync</button>
               </div>
               <div id="dom-list"></div>
@@ -105,16 +107,16 @@
 
             <div id="tab-reg" style="display: none">
               <div class="card">
-                <h3>Student Enrollment</h3>
+                <h3>Enroll Student</h3>
                 <input type="text" id="reg-n" placeholder="Full Name" />
                 <input type="tel" id="reg-ph" placeholder="Parent WhatsApp (07XXXXXXXX)" maxlength="10"/>
-                <button class="btn btn-p" onclick="register()">Register Student</button>
+                <button class="btn btn-p" onclick="register()">Confirm Enrollment</button>
               </div>
             </div>
 
             <div id="tab-set" style="display: none">
               <div class="card">
-                <h3>Teacher Revenue (80%)</h3>
+                <h3>Yearly Revenue Chart</h3>
                 <div id="revenue-chart" class="chart-container"></div>
                 <div style="display:flex; justify-content:space-between; font-size:8px; color:#94a3b8; margin-top:5px;">
                     <span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span><span>JUL</span><span>AUG</span><span>SEP</span><span>OCT</span><span>NOV</span><span>DEC</span>
@@ -140,22 +142,22 @@
     </div>
 
     <script>
-      // AUTHENTICATION
+      // AUTHENTICATION LOGIC
       function checkLogin() {
         const pin = document.getElementById("master-pin").value;
-        if(pin === "9988") {
+        if(pin === "9988") { // Master Entry Key
             sessionStorage.setItem("auth_sip", "true");
             document.getElementById("login-screen").style.display = "none";
             document.getElementById("app-content").style.display = "block";
             initApp();
-        } else { alert("Incorrect Key"); }
+        } else { alert("Invalid System Access Key"); }
       }
       if(sessionStorage.getItem("auth_sip") === "true") {
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("app-content").style.display = "block";
       }
 
-      // FIREBASE
+      // FIREBASE CORE
       const firebaseConfig = {
         apiKey: "AIzaSyARz6yYnI8d2KR6wWl--PT6nEnVikSplms",
         authDomain: "sipsayura-96757.firebaseapp.com",
@@ -176,7 +178,7 @@
       initApp();
       const save = () => rdb.ref('sip_v28').set(db);
 
-      // UI LOGIC
+      // UI CONTROLS
       function refreshUI() {
         if(document.getElementById('v-grades').style.display !== 'none') initGrades();
         if(document.getElementById('v-subs').style.display !== 'none') initSubs();
@@ -221,96 +223,172 @@
         });
       }
 
-      // ADVANCED REPORT (As per photo)
+      // PROFESSIONAL TEACHER SUMMARY
       function openSummary() {
         const date = document.getElementById("att-date").value;
         const key = `${cs}_${cg}_${date}`;
         const attData = db.att?.[key] || { p: [], daily: {} };
+        const month = date.slice(0, 7);
         const mFee = db.grades[cg].mFee;
         let mTotal = 0, dTotal = 0;
 
         let html = `
-        <div style="background:white; padding:10px; font-family: sans-serif;">
-            <h2 style="text-align:center; font-size:22px; margin-bottom:5px;">SIPSAYURA CLASS REPORT</h2>
-            <p style="text-align:center; font-size:11px; color:#64748b; margin-bottom:20px;">DATE: ${date} | SUBJECT: ${cs} | GRADE: ${cg}</p>
-            <table style="width:100%; border-collapse: collapse;">
-                <tr style="background:#0f172a; color:white; text-align:left;">
-                    <th style="padding:12px 8px; font-size:11px;">ID</th>
-                    <th style="padding:12px 8px; font-size:11px;">Name</th>
-                    <th style="padding:12px 8px; font-size:11px;">Status</th>
-                    <th style="padding:12px 8px; font-size:11px; text-align:right;">Fee</th>
-                </tr>`;
+        <div style="background:white; font-family: sans-serif;">
+            <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:10px; margin-bottom:15px;">
+                <h1 style="font-size:20px; margin:0; letter-spacing:1px;">SIPSAYURA CLASS REPORT</h1>
+                <p style="font-size:11px; color:#475569; margin:5px 0; font-weight:600;">
+                  ${cs} | GRADE ${cg} | DATE: ${date}
+                </p>
+            </div>
+            <table style="width:100%; border-collapse: collapse; margin-bottom:20px;">
+                <thead>
+                    <tr style="background:#0f172a; color:white;">
+                        <th style="padding:12px 8px; text-align:left; font-size:11px; width:20%;">ID</th>
+                        <th style="padding:12px 8px; text-align:left; font-size:11px; width:45%;">STUDENT NAME</th>
+                        <th style="padding:12px 8px; text-align:center; font-size:11px; width:15%;">STATUS</th>
+                        <th style="padding:12px 8px; text-align:right; font-size:11px; width:20%;">FEE (RS)</th>
+                    </tr>
+                </thead>
+                <tbody>`;
         
-        (db.students || []).filter(s => s.g === cg && s.s === cs).forEach(s => {
+        const students = (db.students || []).filter(s => s.g === cg && s.s === cs);
+        students.forEach(s => {
             const isP = attData.p.includes(s.id);
-            const paidToday = db.fees?.[date.slice(0, 7)]?.[s.id]?.date === date;
+            const paidToday = db.fees?.[month]?.[s.id]?.date === date;
             const fee = (paidToday ? mFee : 0) + (attData.daily?.[s.id] || 0);
             mTotal += (paidToday ? mFee : 0); dTotal += (attData.daily?.[s.id] || 0);
-            html += `<tr style="border-bottom:1px solid #f1f5f9; background:${!isP?'#fff5f5':'none'}">
-                <td style="padding:10px 8px; font-size:11px; color:#64748b;">${s.id}</td>
-                <td style="padding:10px 8px; font-weight:600;">${s.name.toUpperCase()}</td>
-                <td style="padding:10px 8px; color:${isP?'#10b981':'#f43f5e'}; font-weight:700; font-size:10px;">${isP?'PRESENT':'ABSENT'}</td>
-                <td style="padding:10px 8px; text-align:right; font-weight:700;">${fee}</td>
-            </tr>`;
+
+            html += `
+                <tr style="border-bottom:1px solid #e2e8f0; background:${!isP ? '#fff1f2' : 'none'};">
+                    <td style="padding:10px 8px; font-size:11px; color:#64748b; font-family:monospace;">${s.id}</td>
+                    <td style="padding:10px 8px; font-weight:700; font-size:12px;">${s.name.toUpperCase()}</td>
+                    <td style="padding:10px 8px; text-align:center;">
+                        <span style="font-weight:800; font-size:10px; color:${isP ? '#10b981' : '#e11d48'};">
+                          ${isP ? 'PRESENT' : 'ABSENT'}
+                        </span>
+                    </td>
+                    <td style="padding:10px 8px; text-align:right; font-weight:700; font-size:12px;">${fee > 0 ? fee.toLocaleString() : '0'}</td>
+                </tr>`;
         });
-        html += `</table></div>`;
-        const total = mTotal + dTotal; const inst = total * 0.2;
+
+        const grossTotal = mTotal + dTotal;
+        const instCharge = grossTotal * 0.20;
+        const teacherFinal = grossTotal - instCharge;
+
+        html += `</tbody></table></div>`;
+
         document.getElementById("sum-area").innerHTML = html;
         document.getElementById("sum-fin").innerHTML = `
-            <div style="padding:10px; margin-top:10px;">
-                <p style="font-weight:700; margin:4px 0;">Total Collection: Rs. ${total}</p>
-                <p style="font-weight:700; margin:4px 0;">Institute Charge (20%): Rs. ${inst.toFixed(0)}</p>
-                <h2 style="color:#10b981; margin-top:15px; font-weight:800;">TEACHER FINAL FEE: Rs. ${(total-inst).toFixed(0)}</h2>
-            </div>`;
+            <div style="background:#f8fafc; padding:15px; border-radius:12px; border:1px solid #e2e8f0;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;">
+                    <span>Total Daily Collection:</span>
+                    <span style="font-weight:700;">Rs. ${grossTotal.toLocaleString()}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:14px; color:#e11d48;">
+                    <span>Institute Commission (20%):</span>
+                    <span style="font-weight:700;">- Rs. ${instCharge.toLocaleString()}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-top:12px; border-top:2px dashed #cbd5e1;">
+                    <span style="font-size:16px; font-weight:800;">TEACHER FINAL FEE:</span>
+                    <span style="font-size:18px; font-weight:900; color:#10b981;">Rs. ${teacherFinal.toLocaleString()}</span>
+                </div>
+            </div>
+        `;
         document.getElementById("s-overlay").style.display = "block";
       }
 
-      // ADVANCED WHATSAPP RECEIPT
-      function sendReceipt(name, ph, type, amt) {
-        const date = document.getElementById("att-date").value;
-        const msg = `*OFFICIAL PAYMENT RECEIPT*%0A----------------------------------------%0A🆔 *Student:* ${name.toUpperCase()}%0A📚 *Class:* Grade ${cg} - ${cs}%0A📅 *Date:* ${date}%0A----------------------------------------%0A💰 *Fee Type:* ${type} Fee%0A💵 *Paid Amount:* Rs. ${amt}.00%0A✅ *Status:* SETTLED%0A----------------------------------------%0A_Thank you - Sipsayura Elite_`;
-        window.open(`https://wa.me/94${ph.substring(1)}?text=${msg}`);
-      }
-
+      // STUDENT PROFILE & ATTENDANCE TRACKER
       function openProfile(id) {
         const s = db.students.find(x => x.id === id);
-        const month = document.getElementById("att-date").value.slice(0, 7);
+        const date = document.getElementById("att-date").value;
+        const month = date.slice(0, 7);
         const isPaid = db.fees?.[month]?.[id]?.paid;
+        const mFee = db.grades[cg].mFee;
+
+        // Calculate Monthly Stats
+        let daysP = 0, totalC = 0;
+        Object.keys(db.att || {}).forEach(k => {
+            if(k.startsWith(`${cs}_${cg}_${month}`)) {
+                totalC++; if(db.att[k].p.includes(id)) daysP++;
+            }
+        });
+
         document.getElementById("p-content").innerHTML = `
-          <h3>${s.name}</h3>
-          <label style="font-size:10px; color:var(--p); font-weight:800;">MONTHLY FEE (Rs. ${db.grades[cg].mFee})</label>
-          <button class="btn ${isPaid ? 'btn-s' : 'btn-p'}" style="margin:10px 0;" onclick="payMonthly('${id}', ${!isPaid})">${isPaid ? '✓ Paid' : 'Collect Monthly'}</button>
-          ${isPaid ? `<button class="btn btn-dk" style="background:#25d366" onclick="sendReceipt('${s.name}', '${s.ph}', 'Monthly', ${db.grades[cg].mFee})">📱 Advanced Receipt</button>` : ''}
-          <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-          <input type="number" id="df-input" placeholder="Daily Amount" value="${db.att?.[`${cs}_${cg}_${document.getElementById("att-date").value}`]?.daily?.[id] || 0}">
-          <button class="btn btn-dk" onclick="payDaily('${id}')">Update Daily Fee</button>
+          <div style="text-align:center; border-bottom:2px solid #f1f5f9; padding-bottom:15px; margin-bottom:15px;">
+              <h3 style="margin:0; font-size:18px;">${s.name.toUpperCase()}</h3>
+              <p style="font-size:11px; color:#64748b; margin:5px 0;">ID: ${s.id} | Parent: ${s.ph}</p>
+          </div>
+          <div style="background:#f8fafc; border-radius:12px; padding:12px; margin-bottom:20px; border:1px solid #e2e8f0;">
+              <p style="font-size:10px; font-weight:800; color:#4f46e5; margin:0 0 8px 0; text-transform:uppercase;">Monthly Attendance (${month})</p>
+              <div style="display:flex; justify-content:space-between;">
+                  <span style="font-size:13px; font-weight:600;">Present Days:</span>
+                  <span style="font-size:16px; font-weight:800; color:#0f172a;">${daysP} / ${totalC}</span>
+              </div>
+              <div style="width:100%; background:#e2e8f0; height:6px; border-radius:10px; margin-top:8px;">
+                  <div style="width:${totalC > 0 ? (daysP / totalC) * 100 : 0}%; background:#4f46e5; height:100%; border-radius:10px;"></div>
+              </div>
+          </div>
+          <label style="font-size:10px; font-weight:800; color:var(--p)">FINANCIALS</label>
+          <button class="btn ${isPaid ? 'btn-s' : 'btn-p'}" style="margin:10px 0;" onclick="payMonthly('${id}', ${!isPaid})">${isPaid ? '✓ Paid' : 'Collect Monthly (Rs. '+mFee+')'}</button>
+          ${isPaid ? `<button class="btn btn-dk" style="background:#25d366; margin-bottom:15px;" onclick="sendReceipt('${s.name}', '${s.ph}', 'Monthly', ${mFee})">📱 Send Advanced Slip</button>` : ''}
+          <div style="display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:end;">
+              <div>
+                  <label style="font-size:10px; font-weight:800; color:#64748b;">DAILY FEE</label>
+                  <input type="number" id="df-input" value="${db.att?.[`${cs}_${cg}_${date}`]?.daily?.[id] || 0}" style="margin-bottom:0;">
+              </div>
+              <button class="btn btn-dk" style="height:42px;" onclick="payDaily('${id}')">Update</button>
+          </div>
           <button class="btn btn-dk" style="margin-top:20px; background:#f1f5f9; color:var(--dk)" onclick="closeOverlays()">Close</button>
         `;
         document.getElementById("p-overlay").style.display = "block";
       }
 
+      // ADVANCED PARENT SLIP
+      function sendReceipt(name, ph, type, amt) {
+        const date = document.getElementById("att-date").value;
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const msg = 
+          `*SIPSAYURA EDUCATION INSTITUTE*%0A` +
+          `*OFFICIAL DIGITAL RECEIPT*%0A` +
+          `----------------------------------------%0A` +
+          `*STUDENT:* ${name.toUpperCase()}%0A` +
+          `*CLASS:* Grade ${cg} - ${cs}%0A` +
+          `*DATE:* ${date}%0A` +
+          `----------------------------------------%0A` +
+          `*PAYMENT DETAILS*%0A` +
+          `Fee Type: ${type} Fee%0A` +
+          `Amount Paid: *Rs. ${amt.toLocaleString()}.00*%0A` +
+          `Status: *SUCCESS / VERIFIED* ✅%0A` +
+          `----------------------------------------%0A` +
+          `_Automated system-generated receipt._%0A` +
+          `*Thank you for your contribution.*`;
+        window.open(`https://wa.me/94${ph.substring(1)}?text=${msg}`);
+      }
+
+      // HELPER FUNCTIONS
       function payMonthly(id, status) {
-        const month = document.getElementById("att-date").value.slice(0, 7);
-        if(!db.fees) db.fees = {}; if(!db.fees[month]) db.fees[month] = {};
-        db.fees[month][id] = { paid: status, date: document.getElementById("att-date").value };
+        const m = document.getElementById("att-date").value.slice(0, 7);
+        if(!db.fees) db.fees = {}; if(!db.fees[m]) db.fees[m] = {};
+        db.fees[m][id] = { paid: status, date: document.getElementById("att-date").value };
         save(); openProfile(id);
       }
-
       function payDaily(id) {
-        const val = parseInt(document.getElementById("df-input").value) || 0;
-        const key = `${cs}_${cg}_${document.getElementById("att-date").value}`;
-        if(!db.att[key]) db.att[key] = { p: [] };
-        if(!db.att[key].daily) db.att[key].daily = {};
-        db.att[key].daily[id] = val; save(); alert("Updated"); closeOverlays();
+        const v = parseInt(document.getElementById("df-input").value) || 0;
+        const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
+        if(!db.att[k]) db.att[k] = { p: [] }; if(!db.att[k].daily) db.att[k].daily = {};
+        db.att[k].daily[id] = v; save(); alert("Updated"); closeOverlays();
       }
-
+      function markAtt(id, val) {
+        const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
+        if(!db.att[k]) db.att[k] = { p: [] };
+        if(val) db.att[k].p.push(id); else db.att[k].p = db.att[k].p.filter(i => i !== id);
+        save();
+      }
       function updateChart() {
-        const year = new Date().getFullYear(); const data = new Array(12).fill(0);
+        const yr = new Date().getFullYear(); const data = new Array(12).fill(0);
         Object.keys(db.att || {}).forEach(k => {
-            const d = k.split('_')[2];
-            if(d && d.startsWith(year)) {
-                const m = parseInt(d.split('-')[1]) - 1;
-                let day = 0;
+            const d = k.split('_')[2]; if(d && d.startsWith(yr)) {
+                const m = parseInt(d.split('-')[1]) - 1; let day = 0;
                 Object.keys(db.fees?.[d.slice(0, 7)] || {}).forEach(id => { if(db.fees[d.slice(0, 7)][id].date === d) day += (db.grades[k.split('_')[1]]?.mFee || 0); });
                 Object.values(db.att[k].daily || {}).forEach(v => day += v);
                 data[m] += (day * 0.8);
@@ -319,14 +397,6 @@
         const max = Math.max(...data, 1000); const chart = document.getElementById("revenue-chart"); chart.innerHTML = "";
         data.forEach(v => chart.innerHTML += `<div class="chart-bar" style="height:${(v/max)*100}%" data-val="Rs. ${v.toFixed(0)}"></div>`);
       }
-
-      function markAtt(id, val) {
-        const key = `${cs}_${cg}_${document.getElementById("att-date").value}`;
-        if(!db.att[key]) db.att[key] = { p: [] };
-        if(val) db.att[key].p.push(id); else db.att[key].p = db.att[key].p.filter(i => i !== id);
-        save();
-      }
-
       function register() {
         const n = document.getElementById("reg-n").value.trim(); const ph = document.getElementById("reg-ph").value.trim();
         if(!n || !ph) return alert("Fill all fields");
@@ -335,18 +405,8 @@
         db.students.push({ id, name: n, ph, g: cg, s: cs, joined: new Date().toLocaleDateString() });
         save(); alert("Registered!"); setTab('att');
       }
-
-      function addNewGrade() {
-        const n = prompt("Grade:"); if(!n) return;
-        const f = prompt("Monthly Fee:", "1000");
-        if(!db.grades) db.grades = {}; db.grades[n] = { mFee: parseInt(f) };
-        save();
-      }
-
-      function addNewSubject() {
-        const n = prompt("Subject Name:"); if(n) { if(!db.subs) db.subs=[]; db.subs.push(n.toUpperCase()); save(); }
-      }
-
+      function addNewGrade() { const n = prompt("Grade:"); const f = prompt("Fee:", "1000"); if(n) { if(!db.grades) db.grades = {}; db.grades[n] = { mFee: parseInt(f) }; save(); } }
+      function addNewSubject() { const n = prompt("Subject:"); if(n) { if(!db.subs) db.subs=[]; db.subs.push(n.toUpperCase()); save(); } }
       function printReport() {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
         doc.text("SIPSAYURA CLASS REPORT", 105, 20, null, null, "center");
@@ -354,11 +414,10 @@
         doc.text(document.getElementById("sum-fin").innerText, 14, doc.lastAutoTable.finalY + 15);
         doc.save(`Report_${document.getElementById("att-date").value}.pdf`);
       }
-
       function closeOverlays() { document.getElementById("p-overlay").style.display="none"; document.getElementById("s-overlay").style.display="none"; render(); }
       function exportData() {
-        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
-        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Sipsayura_Backup.json`; a.click();
+        const b = new Blob([JSON.stringify(db)], {type: "application/json"});
+        const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Sipsayura_Backup.json`; a.click();
       }
     </script>
   </body>
