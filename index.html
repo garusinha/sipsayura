@@ -3,13 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura App - Cloud Sync</title>
+    <title>Sipsayura Cloud - V26</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics-compat.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
     <style>
@@ -30,16 +29,15 @@
       .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 3000; padding: 20px; overflow-y: auto; backdrop-filter: blur(10px); }
       .modal { background: white; max-width: 500px; margin: 20px auto; border-radius: 32px; padding: 25px; }
       .finance-box { padding: 15px; background: var(--dk); color: white; border-radius: 18px; margin-top: 15px; font-size: 0.9rem; }
-      .status-p { color: #10b981; font-weight: 800; }
-      .status-a { color: #ef4444; font-weight: 800; }
+      .reject-btn { background: #fee2e2; color: #ef4444; border: none; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; cursor: pointer; }
     </style>
   </head>
   <body>
 
     <header>
-      <span style="font-size: 2.5rem">🏫</span>
+      <span style="font-size: 2rem">🚀</span>
       <h1 style="margin: 0">SIPSAYURA <span style="color: var(--p)">CLOUD</span></h1>
-      <small>V26 | Connected: sipsayura-96757</small>
+      <small>Live Dual-Phone Sync Active</small>
     </header>
 
     <nav id="app-nav" style="display: none">
@@ -78,17 +76,19 @@
         <div id="tab-reg" style="display: none">
           <div class="card">
             <h3>Enroll Student</h3>
-            <input type="text" id="reg-n" placeholder="Full Name" />
-            <input type="tel" id="reg-ph" placeholder="07XXXXXXXX" />
+            <label>Full Name</label>
+            <input type="text" id="reg-n" placeholder="Ex: Kamal Perera" />
+            <label>Phone Number</label>
+            <input type="tel" id="reg-ph" placeholder="0712345678" />
             <button class="btn btn-p" onclick="register()">Add to Class</button>
           </div>
         </div>
 
         <div id="tab-set" style="display: none">
           <div class="card">
-            <h3>Cloud Settings</h3>
-            <p id="sync-status" style="color: var(--s); font-weight: bold;">🟢 Cloud Active</p>
-            <button class="btn btn-dk" onclick="location.reload()">🔄 Switch Grade</button>
+            <h3>Cloud Status</h3>
+            <p style="color: var(--s)">🟢 Syncing with sipsayura-96757</p>
+            <button class="btn btn-dk" onclick="location.reload()">🔄 Switch Grade/Exit</button>
           </div>
         </div>
       </div>
@@ -96,16 +96,16 @@
 
     <div id="s-overlay" class="overlay">
       <div class="modal" style="max-width: 600px">
-        <h2>Class Summary</h2>
+        <h2>Daily Summary</h2>
         <div id="sum-table-area" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px;"></div>
         <div class="finance-box" id="fin-box"></div>
-        <button class="btn btn-p" onclick="shareSummary()">📤 Share PDF</button>
+        <button class="btn btn-p" onclick="shareSummary()">📤 Download PDF</button>
         <button class="btn btn-dk" onclick="document.getElementById('s-overlay').style.display = 'none'">Close</button>
       </div>
     </div>
 
     <script>
-      // --- INTEGRATED FIREBASE CONFIG ---
+      // --- FIREBASE SETUP ---
       const firebaseConfig = {
         apiKey: "AIzaSyARz6yYnI8d2KR6wWl--PT6nEnVikSplms",
         authDomain: "sipsayura-96757.firebaseapp.com",
@@ -113,47 +113,43 @@
         projectId: "sipsayura-96757",
         storageBucket: "sipsayura-96757.firebasestorage.app",
         messagingSenderId: "148140063507",
-        appId: "1:148140063507:web:41a1046fa7aea4885238e6",
-        measurementId: "G-JS2G6LK70K"
+        appId: "1:148140063507:web:41a1046fa7aea4885238e6"
       };
 
-      // Initialize
       firebase.initializeApp(firebaseConfig);
       const rdb = firebase.database();
-      if(firebaseConfig.measurementId) firebase.analytics();
 
-      let db = { students: [], att: {}, fees: {} };
+      let db = { students: [], att: {} };
       let cg = "", cs = "";
 
-      // REAL-TIME SYNC ENGINE
+      // LISTEN FOR CHANGES (Update UI instantly)
       rdb.ref('sip_v26').on('value', (snapshot) => {
         const cloudData = snapshot.val();
         if (cloudData) {
           db = cloudData;
-          // Refresh UI automatically if data changes from another phone
           if (document.getElementById("v-dash").style.display === "block") render();
         }
       });
 
       const saveDB = () => rdb.ref('sip_v26').set(db);
 
-      // --- APP FUNCTIONS ---
+      // --- CORE LOGIC ---
       function init() {
-        ["6", "7", "8", "9", "10", "11"].forEach((g) => {
+        ["6", "7", "8", "9", "10", "11"].forEach(g => {
           document.getElementById("dom-grades").innerHTML += `<button class="card" onclick="selG('${g}')">Grade ${g}</button>`;
         });
       }
 
       function selG(g) {
-        if (prompt("PIN:") === "1234") {
-          cg = g;
+        if (prompt("Enter PIN:") === "1234") {
+          cg = String(g);
           document.getElementById("lbl-grade").innerText = "Grade " + g;
           showV("v-subs");
         }
       }
 
       function enter(s) {
-        cs = s;
+        cs = String(s);
         showV("v-dash");
         document.getElementById("app-nav").style.display = "flex";
         setTab("att", document.querySelector(".nav-btn"));
@@ -174,13 +170,18 @@
 
       function register() {
         const n = document.getElementById("reg-n").value, ph = document.getElementById("reg-ph").value;
-        if (!n || !ph) return alert("Fill data.");
+        if (!n || !ph) return alert("Fill Name and Phone");
+        
+        if(!db.students) db.students = [];
         const id = `${cs}-${(db.students.filter(s => s.subject === cs).length + 1).toString().padStart(3, "0")}`;
-        db.students.push({ id, name: n, phone: ph, grade: cg, subject: cs });
+        
+        db.students.push({ id, name: n, phone: ph, grade: String(cg), subject: String(cs) });
         saveDB();
-        alert("Synced to Cloud!");
+        
+        alert("Student Registered to Cloud!");
         document.getElementById("reg-n").value = "";
         document.getElementById("reg-ph").value = "";
+        setTab('att', document.querySelector('.nav-btn'));
       }
 
       function render() {
@@ -189,14 +190,35 @@
         if(!dateInput) document.getElementById("att-date").value = date;
 
         const q = document.getElementById("att-q").value.toLowerCase();
-        const students = db.students.filter(s => s.grade === cg && s.subject === cs && s.name.toLowerCase().includes(q));
-        const attData = db.att[cs + cg + date] || { present: [], absent: [] };
+        if(!db.students) db.students = [];
 
-        document.getElementById("dom-list").innerHTML = students.map(s => {
-          const isP = attData.present.includes(s.id);
-          return `<div class="std-row">
-            <div><b>${s.name}</b><br><small>${s.id}</small></div>
-            <input type="checkbox" style="width:30px; height:30px;" ${isP ? "checked" : ""} onchange="mark('${s.id}', this)">
+        // Critical Filter Fix
+        const students = db.students.filter(s => 
+          String(s.grade) === String(cg) && 
+          String(s.subject) === String(cs) && 
+          s.name.toLowerCase().includes(q)
+        );
+
+        const listDiv = document.getElementById("dom-list");
+        if(students.length === 0) {
+            listDiv.innerHTML = "<p style='text-align:center; color:gray'>No students found for this class.</p>";
+            return;
+        }
+
+        const attData = (db.att && db.att[cs + cg + date]) || { present: [], rejected: {} };
+
+        listDiv.innerHTML = students.map(s => {
+          const isP = attData.present && attData.present.includes(s.id);
+          const isR = attData.rejected && attData.rejected[s.id];
+          return `<div class="std-row" style="${isR ? 'border-left: 5px solid red' : ''}">
+            <div>
+                <b>${s.name}</b><br>
+                <small>${s.id} ${isR ? '⚠️ REJECTED' : ''}</small>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button class="reject-btn" onclick="toggleReject('${s.id}')">${isR ? 'Undo' : 'Reject'}</button>
+                <input type="checkbox" style="width:30px; height:30px;" ${isP ? "checked" : ""} onchange="mark('${s.id}', this)">
+            </div>
           </div>`;
         }).join("");
       }
@@ -204,8 +226,11 @@
       function mark(id, chk) {
         const date = document.getElementById("att-date").value;
         const key = cs + cg + date;
-        if (!db.att[key]) db.att[key] = { present: [], absent: [] };
+        if (!db.att) db.att = {};
+        if (!db.att[key]) db.att[key] = { present: [], rejected: {} };
+        
         if (chk.checked) {
+          if(!db.att[key].present) db.att[key].present = [];
           if (!db.att[key].present.includes(id)) db.att[key].present.push(id);
         } else {
           db.att[key].present = db.att[key].present.filter(x => x !== id);
@@ -213,41 +238,66 @@
         saveDB();
       }
 
+      function toggleReject(id) {
+        const date = document.getElementById("att-date").value;
+        const key = cs + cg + date;
+        if (!db.att) db.att = {};
+        if (!db.att[key]) db.att[key] = { present: [], rejected: {} };
+        if (!db.att[key].rejected) db.att[key].rejected = {};
+
+        if (db.att[key].rejected[id]) {
+            delete db.att[key].rejected[id];
+        } else {
+            const reason = prompt("Reason for rejection/return?");
+            if (reason) db.att[key].rejected[id] = reason;
+        }
+        saveDB();
+      }
+
       function saveBulkAttendance() {
         const date = document.getElementById("att-date").value;
         const key = cs + cg + date;
-        if (!db.att[key]) db.att[key] = { present: [], absent: [] };
-        const students = db.students.filter(s => s.grade === cg && s.subject === cs);
-        db.att[key].absent = students.filter(s => !db.att[key].present.includes(s.id)).map(s => s.id);
-        saveDB();
-        alert("Cloud Record Updated!");
+        if (!db.att[key]) db.att[key] = { present: [], rejected: {} };
+        alert("Day Finalized and Saved to Cloud!");
       }
 
       function openSummaryWindow() {
         const date = document.getElementById("att-date").value;
         const key = cs + cg + date;
-        const att = db.att[key] || { present: [], absent: [] };
-        const ss = db.students.filter(s => s.grade === cg && s.subject === cs);
+        const att = (db.att && db.att[key]) || { present: [], rejected: {} };
+        const ss = db.students.filter(s => String(s.grade) === String(cg) && String(s.subject) === String(cs));
+        
         let total = 0;
-        let html = `<table id="report-table" style="width:100%; border-collapse: collapse; font-size: 0.9rem;"><thead><tr style="background:#eee"><th>Name</th><th>Status</th><th>Fee</th></tr></thead><tbody>`;
+        let html = `<table id="report-table" style="width:100%; border-collapse: collapse; font-size: 0.8rem;">
+            <thead><tr style="background:#eee"><th>Name</th><th>Status</th><th>Fee</th></tr></thead><tbody>`;
+        
         ss.forEach(s => {
-          const isP = att.present.includes(s.id);
-          const amt = isP ? 1000 : 0;
+          const isP = att.present && att.present.includes(s.id);
+          const isR = att.rejected && att.rejected[s.id];
+          const amt = (isP && !isR) ? 1000 : 0;
           total += amt;
-          html += `<tr style="border-bottom:1px solid #eee"><td>${s.name}</td><td class="${isP ? 'status-p' : 'status-a'}">${isP ? 'P' : 'A'}</td><td>${amt}</td></tr>`;
+          html += `<tr style="border-bottom:1px solid #eee">
+            <td>${s.name}${isR ? '<br><small style="color:red">Rejected: '+att.rejected[s.id]+'</small>' : ''}</td>
+            <td style="color:${isP ? 'green' : 'red'}">${isP ? (isR ? 'REJ' : 'P') : 'A'}</td>
+            <td>${amt}</td>
+          </tr>`;
         });
+        
         html += `</tbody></table>`;
         const inst = total * 0.2;
         document.getElementById("sum-table-area").innerHTML = html;
-        document.getElementById("fin-box").innerHTML = `Total: Rs.${total} <br> Institute (20%): Rs.${inst} <hr> <b>Teacher Fee: Rs.${total - inst}</b>`;
+        document.getElementById("fin-box").innerHTML = `
+            Cash Collected: Rs.${total} <br> 
+            Inst. Fee (20%): Rs.${inst} <hr> 
+            <b>Truck/Teacher Balance: Rs.${total - inst}</b>`;
         document.getElementById("s-overlay").style.display = "block";
       }
 
-      async function shareSummary() {
+      function shareSummary() {
         const doc = new jspdf.jsPDF();
         doc.text("SIPSAYURA DAILY REPORT", 10, 10);
         doc.autoTable({ html: "#report-table", startY: 20 });
-        doc.save(`Sipsayura_Report_${cg}_${cs}.pdf`);
+        doc.save("Daily_Report.pdf");
       }
 
       init();
