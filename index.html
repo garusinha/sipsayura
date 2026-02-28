@@ -3,97 +3,94 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura Pro - Cloud V26</title>
+    <title>Sipsayura Management - Cloud Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-      :root { --p: #4f46e5; --s: #10b981; --d: #ef4444; --dk: #0f172a; --bg: #f8fafc; }
-      body { font-family: "Plus Jakarta Sans", sans-serif; margin: 0; background: var(--bg); color: var(--dk); }
-      header { background: var(--dk); color: white; padding: 25px; text-align: center; border-bottom: 5px solid var(--p); }
-      nav { background: white; padding: 12px; display: flex; justify-content: center; gap: 8px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-      .nav-btn { padding: 10px 15px; border-radius: 10px; font-weight: 700; border: none; background: transparent; color: #64748b; cursor: pointer; font-size: 0.85rem; }
-      .nav-btn.active { background: var(--p); color: white; }
-      .container { padding: 15px; max-width: 600px; margin: auto; padding-bottom: 100px; }
-      .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #e2e8f0; }
-      input, select { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; margin-bottom: 15px; font-family: inherit; }
-      .std-row { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: white; border-radius: 15px; margin-bottom: 8px; border: 1px solid #edf2f7; }
-      .btn { border: none; padding: 15px; border-radius: 12px; font-weight: 800; cursor: pointer; width: 100%; text-transform: uppercase; transition: 0.2s; }
-      .btn:active { transform: scale(0.98); }
+      :root { --p: #2563eb; --s: #059669; --d: #dc2626; --dk: #1e293b; --bg: #f1f5f9; --txt: #334155; }
+      body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--txt); font-size: 13px; }
+      header { background: #fff; padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+      header h1 { margin: 0; font-size: 16px; color: var(--dk); font-weight: 700; }
+      nav { background: #fff; padding: 8px; display: flex; justify-content: space-around; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 1000; }
+      .nav-btn { padding: 8px 12px; border-radius: 6px; font-weight: 600; border: none; background: transparent; color: #64748b; cursor: pointer; font-size: 12px; }
+      .nav-btn.active { background: #eff6ff; color: var(--p); }
+      .container { padding: 12px; max-width: 500px; margin: auto; padding-bottom: 80px; }
+      .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid #e2e8f0; }
+      h2, h3 { font-size: 14px; margin-top: 0; color: var(--dk); }
+      input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; margin-bottom: 12px; box-sizing: border-box; }
+      .std-row { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 10px; margin-bottom: 6px; border: 1px solid #e2e8f0; }
+      .btn { border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; font-size: 12px; transition: all 0.2s; }
       .btn-p { background: var(--p); color: white; }
-      .btn-dk { background: var(--dk); color: white; }
       .btn-s { background: var(--s); color: white; }
-      .btn-d { background: var(--d); color: white; }
-      .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 3000; padding: 20px; backdrop-filter: blur(5px); }
-      .modal { background: white; max-width: 500px; margin: 20px auto; border-radius: 25px; padding: 25px; position: relative; }
-      .badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; font-weight: 800; margin-top: 4px; display: inline-block; }
-      .badge-paid { background: #dcfce7; color: #15803d; }
-      .badge-due { background: #fee2e2; color: #b91c1c; }
-      .finance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--dk); color: white; padding: 15px; border-radius: 15px; margin-top: 15px; }
-      .total-row { grid-column: span 2; border-top: 1px solid #334155; padding-top: 10px; font-weight: 800; color: var(--s); }
+      .btn-dk { background: var(--dk); color: white; }
+      .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+      .badge-paid { background: #dcfce7; color: #166534; }
+      .badge-due { background: #fee2e2; color: #991b1b; }
+      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; padding: 15px; backdrop-filter: blur(2px); overflow-y: auto; }
+      .modal { background: white; max-width: 450px; margin: 10px auto; border-radius: 16px; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+      .fin-table { width: 100%; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px; font-size: 12px; }
+      .fin-row { display: flex; justify-content: space-between; padding: 4px 0; }
+      .total-row { font-weight: 700; font-size: 14px; color: var(--dk); border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px; }
+      .del-link { color: #94a3b8; font-size: 11px; text-decoration: underline; cursor: pointer; display: block; text-align: center; margin-top: 25px; }
     </style>
   </head>
   <body>
 
     <header>
-      <h1 style="margin: 0; font-size: 1.5rem;">SIPSAYURA <span style="color: var(--p)">PRO</span></h1>
-      <small>Professional Institute Management</small>
+      <h1>SIPSAYURA <span style="color: var(--p)">V26</span></h1>
+      <div id="sync-indicator" style="font-size: 10px; color: var(--s);">● Cloud Synced</div>
     </header>
 
     <nav id="app-nav" style="display: none">
-      <button class="nav-btn active" onclick="setTab('att', this)">Class</button>
+      <button class="nav-btn active" onclick="setTab('att', this)">Classroom</button>
       <button class="nav-btn" onclick="setTab('reg', this)">Enroll</button>
       <button class="nav-btn" onclick="setTab('set', this)">Settings</button>
     </nav>
 
     <div class="container">
       <div id="v-grades">
-        <h2 style="text-align: center; margin: 30px 0">Select Grade</h2>
-        <div id="dom-grades" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"></div>
-        <button class="btn btn-dk" style="margin-top:20px" onclick="addNewGrade()">+ Add New Grade</button>
+        <h2 style="text-align:center; padding: 20px 0;">Select Grade</h2>
+        <div id="dom-grades" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px"></div>
+        <button class="btn btn-dk" style="margin-top:15px; background: #64748b" onclick="addNewGrade()">+ New Grade</button>
       </div>
 
       <div id="v-subs" style="display: none">
         <h2 id="lbl-grade" style="text-align: center"></h2>
-        <div id="dom-subs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"></div>
-        <button class="btn btn-p" style="margin-top:20px" onclick="addNewSubject()">+ Add New Subject</button>
-        <button class="btn btn-dk" style="margin-top:10px" onclick="location.reload()">Back</button>
+        <div id="dom-subs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px"></div>
+        <button class="btn btn-p" style="margin-top:15px" onclick="addNewSubject()">+ New Subject</button>
+        <button class="btn btn-dk" style="margin-top:8px" onclick="location.reload()">← Back</button>
       </div>
 
       <div id="v-dash" style="display: none">
         <div id="tab-att">
-          <div class="card">
-            <label>Session Date</label>
-            <input type="date" id="att-date" onchange="render()" />
-            <input type="text" id="att-q" placeholder="Search student name..." oninput="render()" />
+          <div class="card" style="padding: 10px;">
+            <input type="date" id="att-date" onchange="render()" style="margin-bottom: 8px;" />
+            <input type="text" id="att-q" placeholder="Filter by student name..." oninput="render()" style="margin-bottom: 0;" />
           </div>
-          <div style="display:flex; gap:10px">
-            <button class="btn btn-dk" onclick="openSummary()">📊 Summary</button>
-            <button class="btn btn-s" onclick="finalizeDay()">✔️ Finalize</button>
+          <div style="display:flex; gap:8px">
+            <button class="btn btn-dk" onclick="openSummary()">📊 Day Summary</button>
+            <button class="btn btn-s" onclick="alert('Session Finalized Successfully')">✔️ Finalize</button>
           </div>
-          <div id="dom-list" style="margin-top: 20px"></div>
+          <div id="dom-list" style="margin-top: 15px"></div>
         </div>
 
         <div id="tab-reg" style="display: none">
           <div class="card">
-            <h3>Student Enrollment</h3>
-            <label>Full Name</label>
-            <input type="text" id="reg-n" placeholder="Kamal Silva" />
-            <label>Sri Lankan Mobile (07XXXXXXXX)</label>
-            <input type="tel" id="reg-ph" placeholder="0771234567" maxlength="10"/>
-            <button class="btn btn-p" onclick="register()">Register Student</button>
+            <h3>New Enrollment</h3>
+            <input type="text" id="reg-n" placeholder="Student Full Name" />
+            <input type="tel" id="reg-ph" placeholder="Mobile (07XXXXXXXX)" maxlength="10"/>
+            <button class="btn btn-p" onclick="register()">Add to Cloud Database</button>
           </div>
         </div>
 
         <div id="tab-set" style="display: none">
           <div class="card">
-            <h3>Teacher's Office</h3>
-            <p>Export or Restore Cloud Backups</p>
-            <button class="btn btn-s" onclick="exportData()">Download Backup</button>
-            <hr style="margin:20px 0; opacity:0.1">
-            <button class="btn btn-dk" onclick="location.reload()">Switch Grade</button>
+            <h3>Admin Tools</h3>
+            <button class="btn btn-s" style="margin-bottom:8px" onclick="exportData()">Export Database (.json)</button>
+            <button class="btn btn-dk" onclick="location.reload()">Switch Grade Context</button>
           </div>
         </div>
       </div>
@@ -104,12 +101,17 @@
     </div>
 
     <div id="s-overlay" class="overlay">
-      <div class="modal" style="max-width: 600px">
-        <h2 id="sum-title">Summary</h2>
-        <div id="sum-area" style="max-height: 300px; overflow-y: auto;"></div>
-        <div class="finance-grid" id="sum-fin"></div>
-        <button class="btn btn-p" style="margin-top:15px" onclick="printReport()">Print / Save PDF</button>
-        <button class="btn btn-dk" style="margin-top:10px" onclick="closeOverlays()">Close</button>
+      <div class="modal" style="max-width: 500px">
+        <div style="border-bottom: 2px solid var(--dk); padding-bottom: 10px; margin-bottom: 15px;">
+            <h2 style="margin:0">OFFICIAL SESSION REPORT</h2>
+            <small id="sum-date-label"></small>
+        </div>
+        <div id="sum-area" style="max-height: 250px; overflow-y: auto;"></div>
+        <div class="fin-table" id="sum-fin"></div>
+        <div style="display:flex; gap:8px; margin-top:20px">
+            <button class="btn btn-p" onclick="printReport()">Advanced PDF</button>
+            <button class="btn btn-dk" onclick="closeOverlays()">Close</button>
+        </div>
       </div>
     </div>
 
@@ -144,13 +146,13 @@
         const d = document.getElementById("dom-grades");
         d.innerHTML = "";
         (db.grades || []).forEach(g => {
-          d.innerHTML += `<button class="card" style="margin-bottom:0" onclick="selG('${g}')">Grade ${g}</button>`;
+          d.innerHTML += `<button class="card" style="margin-bottom:0; padding:12px; font-weight:600; text-align:center;" onclick="selG('${g}')">Grade ${g}</button>`;
         });
       }
 
       function selG(g) {
         cg = g;
-        document.getElementById("lbl-grade").innerText = "Grade " + g;
+        document.getElementById("lbl-grade").innerText = "GRADE " + g;
         showV("v-subs");
         initSubs();
       }
@@ -159,17 +161,17 @@
         const d = document.getElementById("dom-subs");
         d.innerHTML = "";
         (db.subs || []).forEach(s => {
-          d.innerHTML += `<button class="card" style="margin-bottom:0" onclick="enter('${s}')">${s}</button>`;
+          d.innerHTML += `<button class="card" style="margin-bottom:0; padding:12px; font-weight:600; text-align:center;" onclick="enter('${s}')">${s}</button>`;
         });
       }
 
       function addNewGrade() {
-        const n = prompt("Enter Grade Name:");
+        const n = prompt("New Grade Name:");
         if(n) { if(!db.grades) db.grades=[]; db.grades.push(n); save(); }
       }
 
       function addNewSubject() {
-        const n = prompt("Enter Subject Name:");
+        const n = prompt("New Subject Name:");
         if(n) { if(!db.subs) db.subs=[]; db.subs.push(n); save(); }
       }
 
@@ -177,7 +179,7 @@
         cs = s;
         showV("v-dash");
         document.getElementById("app-nav").style.display = "flex";
-        setTab("att", document.querySelector(".nav-btn"));
+        setTab('att', document.querySelector(".nav-btn"));
       }
 
       function showV(id) {
@@ -186,7 +188,7 @@
       }
 
       function setTab(t, el) {
-        if(t === 'set' && prompt("Enter Admin PIN:") !== "2705") return;
+        if(t === 'set' && prompt("Admin PIN:") !== "2705") return;
         ["att", "reg", "set"].forEach(i => document.getElementById("tab-" + i).style.display = "none");
         document.getElementById("tab-" + t).style.display = "block";
         document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
@@ -197,15 +199,12 @@
       function register() {
         const n = document.getElementById("reg-n").value.trim();
         const ph = document.getElementById("reg-ph").value.trim();
-        const regex = /^(07[01245678]\d{7})$/;
-
-        if(!n || !regex.test(ph)) return alert("Invalid Name or Sri Lankan Mobile Number (07XXXXXXXX)");
-        
-        const id = Date.now().toString().slice(-6);
+        if(!n || !/^(07\d{8})$/.test(ph)) return alert("Required: Name & Valid 07XXXXXXXX Mobile");
+        const id = Math.random().toString(36).substr(2, 5).toUpperCase();
         if(!db.students) db.students = [];
-        db.students.push({ id, name: n, ph, g: cg, s: cs, joined: new Date().toISOString() });
+        db.students.push({ id, name: n, ph, g: cg, s: cs });
         save();
-        alert("Enrolled Successfully!");
+        alert("Enrolled: " + n);
         document.getElementById("reg-n").value = "";
         document.getElementById("reg-ph").value = "";
         setTab('att', document.querySelector(".nav-btn"));
@@ -215,7 +214,7 @@
         const date = document.getElementById("att-date").value || new Date().toISOString().split('T')[0];
         document.getElementById("att-date").value = date;
         const q = document.getElementById("att-q").value.toLowerCase();
-        const month = date.slice(0, 7); // YYYY-MM
+        const month = date.slice(0, 7);
         
         const list = (db.students || []).filter(s => s.g === cg && s.s === cs && s.name.toLowerCase().includes(q));
         const dom = document.getElementById("dom-list");
@@ -225,16 +224,13 @@
           const key = `${cs}_${cg}_${date}`;
           const isP = db.att?.[key]?.p?.includes(s.id);
           const isPaid = db.fees?.[month]?.[s.id]?.paid;
-
           dom.innerHTML += `
             <div class="std-row">
-              <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer">
-                <b>${s.name}</b><br>
-                <span class="badge ${isPaid ? 'badge-paid' : 'badge-due'}">${isPaid ? 'MONTH PAID' : 'MONTH DUE'}</span>
+              <div onclick="openProfile('${s.id}')" style="flex:1;">
+                <div style="font-weight:600; color:var(--dk)">${s.name}</div>
+                <span class="badge ${isPaid ? 'badge-paid' : 'badge-due'}">${isPaid ? 'Paid' : 'Unpaid'}</span>
               </div>
-              <div style="display:flex; align-items:center; gap:10px">
-                 <input type="checkbox" style="width:25px; height:25px; margin:0" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)">
-              </div>
+              <input type="checkbox" style="width:22px; height:22px;" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)">
             </div>`;
         });
       }
@@ -242,10 +238,8 @@
       function markAtt(id, val) {
         const date = document.getElementById("att-date").value;
         const key = `${cs}_${cg}_${date}`;
-        if(!db.att) db.att = {};
-        if(!db.att[key]) db.att[key] = { p: [] };
-        if(val) db.att[key].p.push(id);
-        else db.att[key].p = db.att[key].p.filter(i => i !== id);
+        if(!db.att) db.att = {}; if(!db.att[key]) db.att[key] = { p: [] };
+        if(val) db.att[key].p.push(id); else db.att[key].p = db.att[key].p.filter(i => i !== id);
         save();
       }
 
@@ -257,31 +251,30 @@
         const dailyFee = db.att?.[`${cs}_${cg}_${date}`]?.daily?.[id] || 0;
 
         document.getElementById("p-content").innerHTML = `
-          <h3>${s.name}</h3>
-          <p>ID: ${s.id} | ${s.ph}</p>
-          <hr>
-          <label>Monthly Class Fee (1,000 LKR)</label>
-          <button class="btn ${isPaid ? 'btn-s' : 'btn-p'}" onclick="payMonthly('${id}', ${!isPaid})">
-            ${isPaid ? 'Payment Received' : 'Mark as Paid (1000)'}
+          <h3 style="margin-bottom:5px">${s.name}</h3>
+          <div style="font-size:11px; color:#64748b; margin-bottom:15px">REG: ${s.id} | ${s.ph}</div>
+          
+          <label style="font-size:11px; font-weight:700">Monthly Fee (1,000 LKR)</label>
+          <button class="btn ${isPaid ? 'btn-s' : 'btn-p'}" style="margin-bottom:15px" onclick="payMonthly('${id}', ${!isPaid})">
+            ${isPaid ? '✓ Fee Received' : 'Collect 1,000 LKR'}
           </button>
           
-          <label style="margin-top:15px">Other Daily Fees (Today)</label>
-          <input type="number" id="df-input" value="${dailyFee}" placeholder="e.g. 200">
-          <button class="btn btn-dk" onclick="payDaily('${id}')">Update Daily Fee</button>
+          <label style="font-size:11px; font-weight:700">Daily/Misc Fee (Today)</label>
+          <input type="number" id="df-input" value="${dailyFee}" style="margin-bottom:8px">
+          <button class="btn btn-dk" onclick="payDaily('${id}')">Update Daily Amount</button>
           
-          <button class="btn btn-d" style="margin-top:20px" onclick="deleteStudent('${id}')">Delete Student</button>
-          <button class="btn btn-dk" style="margin-top:10px" onclick="closeOverlays()">Close</button>
+          <span class="del-link" onclick="deleteStudent('${id}')">Remove student from records</span>
+          <button class="btn btn-dk" style="margin-top:15px; background:#f1f5f9; color:var(--dk)" onclick="closeOverlays()">Close</button>
         `;
         document.getElementById("p-overlay").style.display = "block";
       }
 
       function payMonthly(id, status) {
         const month = document.getElementById("att-date").value.slice(0, 7);
-        if(!db.fees) db.fees = {};
-        if(!db.fees[month]) db.fees[month] = {};
-        db.fees[month][id] = { paid: status, date: new Date().toISOString() };
-        save();
-        openProfile(id);
+        const date = document.getElementById("att-date").value;
+        if(!db.fees) db.fees = {}; if(!db.fees[month]) db.fees[month] = {};
+        db.fees[month][id] = { paid: status, date: date };
+        save(); openProfile(id);
       }
 
       function payDaily(id) {
@@ -290,15 +283,13 @@
         const key = `${cs}_${cg}_${date}`;
         if(!db.att[key].daily) db.att[key].daily = {};
         db.att[key].daily[id] = val;
-        save();
-        alert("Daily fee updated");
+        save(); alert("Daily amount updated.");
       }
 
       function deleteStudent(id) {
-        if(confirm("Permanently delete this student?")) {
+        if(confirm("Are you sure? This student's history will be deleted.")) {
             db.students = db.students.filter(x => x.id !== id);
-            save();
-            closeOverlays();
+            save(); closeOverlays();
         }
       }
 
@@ -308,67 +299,61 @@
         const attData = db.att?.[key] || { p: [], daily: {} };
         const month = date.slice(0, 7);
         
+        document.getElementById("sum-date-label").innerText = `Grade ${cg} ${cs} | Session: ${date}`;
+        
         let mTotal = 0, dTotal = 0;
-        let html = `<table style="width:100%; font-size:0.8rem; border-collapse:collapse">
-            <tr style="background:#eee"><th>Name</th><th>Month</th><th>Daily</th></tr>`;
+        let html = `<table style="width:100%; font-size:11px; border-collapse:collapse">
+            <tr style="text-align:left; color:#64748b; border-bottom:1px solid #e2e8f0"><th style="padding:5px">Student</th><th>Monthly</th><th>Daily</th></tr>`;
         
         (db.students || []).filter(s => s.g === cg && s.s === cs).forEach(s => {
-            const mFee = (db.fees?.[month]?.[s.id]?.paid && db.fees?.[month]?.[s.id]?.date.startsWith(date)) ? 1000 : 0;
+            const mFee = (db.fees?.[month]?.[s.id]?.paid && db.fees?.[month]?.[s.id]?.date === date) ? 1000 : 0;
             const dFee = attData.daily?.[s.id] || 0;
-            mTotal += mFee; dTotal += dFee;
-            html += `<tr style="border-bottom:1px solid #eee">
-                <td>${s.name}</td><td>${mFee}</td><td>${dFee}</td>
-            </tr>`;
+            if(mFee > 0 || dFee > 0) {
+                mTotal += mFee; dTotal += dFee;
+                html += `<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:6px">${s.name}</td><td>${mFee}</td><td>${dFee}</td></tr>`;
+            }
         });
         html += `</table>`;
 
         const total = mTotal + dTotal;
         const inst = total * 0.2;
 
-        document.getElementById("sum-area").innerHTML = html;
+        document.getElementById("sum-area").innerHTML = total > 0 ? html : "<p style='text-align:center; padding:20px; color:#94a3b8;'>No payments recorded today.</p>";
         document.getElementById("sum-fin").innerHTML = `
-            <div>Month Coll.</div><div style="text-align:right">LKR ${mTotal}</div>
-            <div>Daily Coll.</div><div style="text-align:right">LKR ${dTotal}</div>
-            <div class="total-row">Institute Fee (20%)</div><div class="total-row" style="text-align:right">-LKR ${inst}</div>
-            <div class="total-row" style="color:#fff">Teacher Balance</div><div class="total-row" style="text-align:right; color:#fff">LKR ${total - inst}</div>
+            <div class="fin-row"><span>Total Monthly</span><span>LKR ${mTotal}</span></div>
+            <div class="fin-row"><span>Total Daily/Misc</span><span>LKR ${dTotal}</span></div>
+            <div class="fin-row" style="color:var(--d)"><span>Institute Fee (20%)</span><span>-LKR ${inst.toFixed(0)}</span></div>
+            <div class="fin-row total-row"><span>Teacher Balance</span><span>LKR ${(total - inst).toFixed(0)}</span></div>
         `;
         document.getElementById("s-overlay").style.display = "block";
       }
 
       function printReport() {
-        const doc = new jspdf.jsPDF();
-        doc.setFontSize(18);
-        doc.text("SIPSAYURA CLASS REPORT", 14, 20);
-        doc.setFontSize(12);
-        doc.text(`Class: Grade ${cg} ${cs} | Date: ${document.getElementById("att-date").value}`, 14, 30);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const date = document.getElementById("att-date").value;
+        
+        doc.setFontSize(20); doc.setTextColor(30, 41, 59); doc.text("SIPSAYURA INSTITUTE", 14, 22);
+        doc.setFontSize(10); doc.setTextColor(100); doc.text(`Date: ${date} | Grade: ${cg} | Subject: ${cs}`, 14, 30);
         
         doc.autoTable({
-          html: '#sum-area table',
-          startY: 40,
-          theme: 'grid'
+          html: '#sum-area table', startY: 35, theme: 'striped', headStyles: { fillColor: [30, 41, 59] }, styles: { fontSize: 9 }
         });
         
-        const finalY = doc.lastAutoTable.finalY + 10;
-        doc.text(`Collection Details:`, 14, finalY);
-        doc.text(document.getElementById("sum-fin").innerText, 14, finalY + 10);
+        const finalY = doc.lastAutoTable.finalY + 15;
+        doc.setFontSize(12); doc.setTextColor(0); doc.text("FINANCIAL SUMMARY", 14, finalY);
+        doc.setFontSize(10);
+        const finText = document.getElementById("sum-fin").innerText.split('\n');
+        finText.forEach((line, i) => doc.text(line, 14, finalY + 10 + (i * 7)));
         
-        doc.save(`Report_${cg}_${cs}.pdf`);
+        doc.save(`Sipsayura_${cg}_${cs}_${date}.pdf`);
       }
 
-      function finalizeDay() { alert("Cloud Data Secured. Session Records Finalized."); }
-      function closeOverlays() { 
-        document.getElementById("p-overlay").style.display = "none";
-        document.getElementById("s-overlay").style.display = "none";
-        render();
-      }
+      function closeOverlays() { document.getElementById("p-overlay").style.display="none"; document.getElementById("s-overlay").style.display="none"; render(); }
       function exportData() {
         const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "sipsayura_backup.json";
-        a.click();
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Sipsayura_Backup_${new Date().toLocaleDateString()}.json`; a.click();
       }
-
       initGrades();
     </script>
   </body>
