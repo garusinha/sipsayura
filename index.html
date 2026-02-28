@@ -3,168 +3,138 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura Elite - V28 Secure</title>
+    <title>Sipsayura Pro - V29</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <style>
-      :root { --p: #4f46e5; --s: #10b981; --d: #f43f5e; --dk: #0f172a; --bg: #f8fafc; }
-      body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; background: var(--bg); color: var(--dk); font-size: 13px; -webkit-tap-highlight-color: transparent; }
+      :root { --p: #4f46e5; --s: #10b981; --d: #f43f5e; --dk: #0f172a; --bg: #f8fafc; --gray: #64748b; }
+      body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; background: var(--bg); color: var(--dk); -webkit-tap-highlight-color: transparent; }
       
-      /* Login Screen Styling */
+      /* Login Screen */
       #login-screen { position: fixed; inset: 0; background: var(--dk); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; color: white; text-align: center; }
       .login-box { width: 100%; max-width: 320px; }
-      .login-box h1 { font-size: 24px; margin-bottom: 5px; }
-      .login-box p { font-size: 10px; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
-      .pin-input { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); color: white; text-align: center; font-size: 24px; letter-spacing: 10px; padding: 15px; border-radius: 16px; width: 100%; margin-bottom: 20px; outline: none; }
+      .pin-input { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); color: white; text-align: center; font-size: 24px; padding: 15px; border-radius: 16px; width: 100%; margin-bottom: 20px; outline: none; }
       
-      /* App Header & Layout */
-      header { background: linear-gradient(135deg, var(--dk) 0%, #1e293b 100%); color: white; padding: 35px 20px; text-align: center; border-radius: 0 0 30px 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-      header .icon { font-size: 45px; margin-bottom: 10px; display: block; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
-      header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; font-weight: 800; }
-      header p { opacity: 0.6; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px; }
+      /* Navigation & Header */
+      header { background: var(--dk); color: white; padding: 30px 20px; text-align: center; border-radius: 0 0 30px 30px; }
       nav { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 8px; display: flex; justify-content: space-around; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 1000; }
-      .nav-btn { padding: 10px 15px; border-radius: 12px; font-weight: 700; border: none; background: transparent; color: #64748b; cursor: pointer; font-size: 12px; }
-      .nav-btn.active { background: var(--p); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
-      .container { padding: 15px; max-width: 480px; margin: auto; padding-bottom: 100px; }
-      .card { background: white; padding: 18px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #f1f5f9; }
-      .grade-card { background: white; padding: 20px; border-radius: 20px; text-align: center; border: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; }
-      .btn { border: none; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; font-size: 12px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+      .nav-btn { padding: 10px 15px; border-radius: 12px; font-weight: 700; border: none; background: transparent; color: var(--gray); font-size: 12px; cursor: pointer; }
+      .nav-btn.active { background: var(--p); color: white; }
+
+      .container { padding: 15px; max-width: 600px; margin: auto; padding-bottom: 100px; }
+      .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
+      
+      /* Teacher Summary Table Styling (Based on your Photo) */
+      .report-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+      .report-table th { background: #0f172a; color: white; text-align: left; padding: 12px; }
+      .report-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+      .report-table tr:nth-child(even) { background: #f8fafc; }
+      
+      .fin-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 10px; }
+      .fin-line { font-weight: 700; margin-bottom: 8px; font-size: 14px; }
+      .teacher-final { color: #10b981; font-size: 18px; border-top: 2px solid #f1f5f9; padding-top: 10px; }
+
+      /* Buttons & Inputs */
+      .btn { border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
       .btn-p { background: var(--p); color: white; }
-      .btn-s { background: var(--s); color: white; }
       .btn-dk { background: var(--dk); color: white; }
-      .std-row { display: flex; align-items: center; justify-content: space-between; padding: 14px; background: white; border-radius: 16px; margin-bottom: 8px; border: 1px solid #f1f5f9; }
-      .badge { font-size: 9px; padding: 3px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; margin-top: 4px; display: inline-block; }
-      .badge-paid { background: #dcfce7; color: #166534; }
-      .badge-due { background: #fee2e2; color: #991b1b; }
-      .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); z-index: 3000; padding: 15px; backdrop-filter: blur(8px); overflow-y: auto; }
-      .modal { background: white; max-width: 420px; margin: 20px auto; border-radius: 24px; padding: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); }
-      .chart-container { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 10px 0; border-bottom: 2px solid #f1f5f9; margin-bottom: 10px; }
-      .chart-bar { flex: 1; background: var(--p); border-radius: 4px 4px 0 0; min-height: 2px; position: relative; }
-      .chart-bar:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 8px; background: var(--dk); color: white; padding: 2px 4px; border-radius: 4px; white-space: nowrap; }
-      .chart-label { display: flex; justify-content: space-between; font-size: 8px; color: #94a3b8; }
-      .fin-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; }
-      .total-row { font-weight: 800; font-size: 15px; border-top: 2px solid #f1f5f9; margin-top: 10px; padding-top: 10px; color: var(--p); }
+      input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1.5px solid #e2e8f0; margin-bottom: 15px; box-sizing: border-box; font-family: inherit; }
+      
+      /* Overlay */
+      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; padding: 15px; overflow-y: auto; }
+      .modal { background: white; max-width: 550px; margin: 10px auto; border-radius: 24px; padding: 25px; position: relative; }
+      .grade-card { background: white; padding: 25px; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; cursor: pointer; }
     </style>
   </head>
   <body>
 
     <div id="login-screen">
       <div class="login-box">
-        <span style="font-size: 50px;">🛡️</span>
-        <h1>Sipsayura Elite</h1>
-        <p>Restricted Access System</p>
-        <input type="password" id="master-pin" class="pin-input" placeholder="••••" maxlength="4">
-        <button class="btn btn-p" onclick="checkLogin()">Unlock System</button>
-        <div id="login-error" style="color:var(--d); font-size:11px; margin-top:15px; display:none;">Invalid System Key. Access Denied.</div>
+        <h1 style="margin:0">Sipsayura Pro</h1>
+        <p style="font-size:10px; opacity:0.5; margin-bottom:30px">MANAGEMENT SYSTEM V29</p>
+        <input type="password" id="master-pin" class="pin-input" placeholder="Enter PIN" maxlength="4">
+        <button class="btn btn-p" onclick="checkLogin()">Unlock Dashboard</button>
       </div>
     </div>
 
     <div id="app-content" style="display: none;">
         <header>
-          <span class="icon">🎓</span>
-          <p>Institute Management Cloud</p>
-          <h1>SIPSAYURA <span style="color: #818cf8">ELITE</span></h1>
+          <h1 style="margin:0; font-size:24px;">SIPSAYURA <span style="color:#818cf8">ELITE</span></h1>
+          <p style="font-size:10px; opacity:0.6; letter-spacing:2px">PRO EDUCATION CLOUD</p>
         </header>
 
         <nav id="app-nav" style="display: none">
           <button class="nav-btn active" onclick="setTab('att', this)">Classroom</button>
-          <button class="nav-btn" onclick="setTab('reg', this)">Enroll</button>
+          <button class="nav-btn" onclick="setTab('reg', this)">Enrollment</button>
           <button class="nav-btn" onclick="setTab('set', this)">Admin</button>
         </nav>
 
         <div class="container">
           <div id="v-grades">
-            <h2 style="font-size: 14px; margin-bottom: 15px; color: #64748b;">Choose Grade</h2>
-            <div id="dom-grades" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"></div>
-            <button class="btn btn-dk" style="margin-top:25px; border-radius: 20px;" onclick="addNewGrade()">+ Create New Class</button>
+            <div id="dom-grades" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px"></div>
+            <button class="btn btn-dk" style="margin-top:20px" onclick="addNewGrade()">+ Create New Class</button>
           </div>
 
           <div id="v-subs" style="display: none">
-            <div style="display:flex; align-items:center; justify-content: space-between; margin-bottom: 20px;">
-                <h2 id="lbl-grade" style="margin:0"></h2>
-                <button onclick="location.reload()" style="background:none; border:none; color:var(--p); font-weight:800;">Change Grade</button>
-            </div>
-            <div id="dom-subs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"></div>
-            <button class="btn btn-p" style="margin-top:20px" onclick="addNewSubject()">+ Add New Subject</button>
+            <h2 id="lbl-grade"></h2>
+            <div id="dom-subs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px"></div>
           </div>
 
           <div id="v-dash" style="display: none">
             <div id="tab-att">
-              <div class="card" style="padding: 12px;">
-                <input type="date" id="att-date" onchange="render()" />
-                <input type="text" id="att-q" placeholder="Filter student list..." oninput="render()" style="margin-bottom:0" />
+              <div class="card">
+                <input type="date" id="att-date" onchange="render()">
+                <input type="text" id="att-q" placeholder="Search students..." oninput="render()" style="margin-bottom:0">
               </div>
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
-                <button class="btn btn-dk" onclick="openSummary()">📊 Teacher Summary</button>
-                <button class="btn btn-s" onclick="save()">✔️ Cloud Sync</button>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px">
+                <button class="btn btn-dk" onclick="openSummary()">📋 Class Report</button>
+                <button class="btn btn-s" style="background:#10b981; color:white" onclick="save()">☁️ Sync Cloud</button>
               </div>
-              <button class="btn" style="background: #64748b; color: white; margin-bottom:15px;" onclick="markOthersAbsent()">🚫 Mark Unchecked as Absent</button>
               <div id="dom-list"></div>
             </div>
 
             <div id="tab-reg" style="display: none">
               <div class="card">
-                <h3>Enroll Student</h3>
-                <input type="text" id="reg-n" placeholder="Student Full Name" />
-                <input type="tel" id="reg-ph" placeholder="Parent Mobile (07XXXXXXXX)" maxlength="10"/>
-                <button class="btn btn-p" onclick="register()">Confirm Enrollment</button>
+                <h3>New Student Enrollment</h3>
+                <input type="text" id="reg-n" placeholder="Student Full Name">
+                <input type="tel" id="reg-ph" placeholder="WhatsApp Number (07XXXXXXXX)">
+                <button class="btn btn-p" onclick="register()">Enroll Student</button>
               </div>
             </div>
 
             <div id="tab-set" style="display: none">
-              <div class="card">
-                <h3 style="margin-top:0">Yearly Teacher Revenue</h3>
-                <div id="revenue-chart" class="chart-container"></div>
-                <div class="chart-label">
-                    <span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span>
-                    <span>JUL</span><span>AUG</span><span>SEP</span><span>OCT</span><span>NOV</span><span>DEC</span>
+                <div class="card">
+                    <h3>Yearly Teacher Revenue</h3>
+                    <div id="revenue-chart" class="chart-container"></div>
                 </div>
-              </div>
-              <div class="card">
-                <h3>Admin Controls</h3>
-                <button class="btn btn-s" style="margin-bottom:10px" onclick="exportData()">Backup Cloud Data</button>
-                <button class="btn btn-dk" onclick="location.reload()">Log Out / Switch Grade</button>
-              </div>
+                <button class="btn btn-dk" onclick="location.reload()">Log Out</button>
             </div>
           </div>
         </div>
     </div>
 
-    <div id="p-overlay" class="overlay"><div class="modal" id="p-content"></div></div>
     <div id="s-overlay" class="overlay">
       <div class="modal">
-        <h3>Teacher's Master Sheet</h3>
-        <div id="sum-area" style="max-height: 280px; overflow-y: auto; margin-bottom:15px"></div>
-        <div class="fin-table" id="sum-fin"></div>
-        <button class="btn btn-p" style="margin-top:15px" onclick="printReport()">Download PDF Report</button>
-        <button class="btn btn-dk" style="margin-top:10px; background:#f1f5f9; color:var(--dk)" onclick="closeOverlays()">Close</button>
+        <h2 style="margin-top:0">SIPSAYURA CLASS REPORT</h2>
+        <p id="report-meta" style="font-size:12px; color:var(--gray); font-weight:700; border-bottom:1px solid #eee; padding-bottom:10px;"></p>
+        <div id="sum-area"></div>
+        <div id="sum-fin" class="fin-box"></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px">
+            <button class="btn btn-p" onclick="printReport()">Download PDF</button>
+            <button class="btn btn-dk" onclick="closeOverlays()">Close</button>
+        </div>
       </div>
     </div>
 
+    <div id="p-overlay" class="overlay"><div class="modal" id="p-content"></div></div>
+
     <script>
-      // LOGIN SECURITY
-      function checkLogin() {
-        const pin = document.getElementById("master-pin").value;
-        if(pin === "9988") { // <--- CHANGE THIS MASTER PIN
-            sessionStorage.setItem("sipsayura_auth", "true");
-            document.getElementById("login-screen").style.display = "none";
-            document.getElementById("app-content").style.display = "block";
-            initApp();
-        } else {
-            document.getElementById("login-error").style.display = "block";
-        }
-      }
+      let db = { students: [], att: {}, grades: {}, subs: ["MATH","SCI","ENG","SIN"], fees: {} };
+      let cg = "", cs = "";
 
-      // Restore session on refresh
-      if(sessionStorage.getItem("sipsayura_auth") === "true") {
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("app-content").style.display = "block";
-      }
-
-      // FIREBASE CONFIG
       const firebaseConfig = {
         apiKey: "AIzaSyARz6yYnI8d2KR6wWl--PT6nEnVikSplms",
         authDomain: "sipsayura-96757.firebaseapp.com",
@@ -177,60 +147,47 @@
 
       firebase.initializeApp(firebaseConfig);
       const rdb = firebase.database();
-      let db = { students: [], att: {}, grades: {}, subs: ["MATH","SCI","SIN","ENG"], fees: {} };
-      let cg = "", cs = "";
 
-      function initApp() {
-        rdb.ref('sip_v28').on('value', (s) => { 
-            if(s.val()) { db = s.val(); render(); refreshUI(); updateChart(); } 
-        });
+      function checkLogin() {
+        if(document.getElementById("master-pin").value === "9988") {
+          sessionStorage.setItem("auth", "y");
+          document.getElementById("login-screen").style.display="none";
+          document.getElementById("app-content").style.display="block";
+          loadData();
+        }
       }
-      initApp();
 
-      const save = () => rdb.ref('sip_v28').set(db);
+      function loadData() {
+        rdb.ref('sip_v29').on('value', s => { if(s.val()) { db = s.val(); render(); refreshUI(); } });
+      }
+      const save = () => rdb.ref('sip_v29').set(db);
 
       function refreshUI() {
-        if(document.getElementById('v-grades').style.display !== 'none') initGrades();
-        if(document.getElementById('v-subs').style.display !== 'none') initSubs();
-      }
-
-      function initGrades() {
         const d = document.getElementById("dom-grades"); d.innerHTML = "";
-        const grades = db.grades || {};
-        Object.keys(grades).forEach(g => {
-          d.innerHTML += `<div class="grade-card" onclick="selG('${g}')"><h3 style="margin:0">Grade ${g}</h3><span style="font-size:10px; color:#94a3b8">Fee: ${grades[g].mFee}</span></div>`;
+        Object.keys(db.grades || {}).forEach(g => {
+          d.innerHTML += `<div class="grade-card" onclick="selG('${g}')"><b>Grade ${g}</b></div>`;
         });
       }
 
       function selG(g) { cg = g; document.getElementById("lbl-grade").innerText = "Grade " + g; showV("v-subs"); initSubs(); }
       function initSubs() {
         const d = document.getElementById("dom-subs"); d.innerHTML = "";
-        (db.subs || []).forEach(s => { d.innerHTML += `<div class="grade-card" onclick="enter('${s}')"><h3>${s}</h3></div>`; });
+        (db.subs || []).forEach(s => { d.innerHTML += `<div class="grade-card" onclick="enter('${s}')"><b>${s}</b></div>`; });
       }
 
       function enter(s) { cs = s; showV("v-dash"); document.getElementById("app-nav").style.display = "flex"; setTab('att', document.querySelector(".nav-btn")); }
       function showV(id) { ["v-grades", "v-subs", "v-dash"].forEach(v => document.getElementById(v).style.display = "none"); document.getElementById(id).style.display = "block"; }
 
-      function setTab(t, el) {
-        if(t === 'set' && prompt("Admin PIN:") !== "2705") return;
-        ["att", "reg", "set"].forEach(i => document.getElementById("tab-" + i).style.display = "none");
-        document.getElementById("tab-" + t).style.display = "block";
-        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-        if (el) el.classList.add("active"); render();
-      }
-
       function render() {
         const date = document.getElementById("att-date").value || new Date().toISOString().split('T')[0];
         document.getElementById("att-date").value = date;
         const q = document.getElementById("att-q").value.toLowerCase();
-        const month = date.slice(0, 7);
         const list = (db.students || []).filter(s => s.g === cg && s.s === cs && s.name.toLowerCase().includes(q));
         const dom = document.getElementById("dom-list"); dom.innerHTML = "";
         list.forEach(s => {
           const key = `${cs}_${cg}_${date}`;
           const isP = db.att?.[key]?.p?.includes(s.id);
-          const isPaid = db.fees?.[month]?.[s.id]?.paid;
-          dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')" style="flex:1"><div style="font-weight:700">${s.name}</div><span class="badge ${isPaid ? 'badge-paid' : 'badge-due'}">${isPaid ? 'Settled' : 'Pending'}</span></div><input type="checkbox" style="width:24px; height:24px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
+          dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')"><b>${s.name}</b></div><input type="checkbox" style="width:25px; height:25px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
         });
       }
 
@@ -239,24 +196,59 @@
         const date = document.getElementById("att-date").value;
         const month = date.slice(0, 7);
         const isPaid = db.fees?.[month]?.[id]?.paid;
-        const classMonthlyFee = db.grades[cg].mFee;
-        const dailyFeeVal = db.att?.[`${cs}_${cg}_${date}`]?.daily?.[id] || 0;
+        const feeAmt = db.grades[cg].mFee;
 
         document.getElementById("p-content").innerHTML = `
-          <h3 style="margin:0">${s.name}</h3>
-          <p style="font-size:10px; color:#94a3b8">Mobile: ${s.ph} | Joined: ${s.joined || 'N/A'}</p>
-          <hr style="border:0; border-top:1px solid #f1f5f9; margin:15px 0;">
-          <label style="font-size:10px; font-weight:800; color:var(--p)">MONTHLY FEE (LKR ${classMonthlyFee})</label>
-          <button class="btn ${isPaid ? 'btn-s' : 'btn-p'}" style="margin-bottom:8px" onclick="payMonthly('${id}', ${!isPaid})">
-            ${isPaid ? '✓ Fee Received' : 'Collect Fee'}
-          </button>
-          ${isPaid ? `<button class="btn btn-dk" style="margin-bottom:15px; background:#25d366" onclick="sendReceipt('${s.name}', '${s.ph}', 'Monthly', ${classMonthlyFee})">📱 Share Receipt</button>` : ''}
-          <label style="font-size:10px; font-weight:800; color:var(--p)">DAILY FEE</label>
-          <input type="number" id="df-input" value="${dailyFeeVal}">
-          <button class="btn btn-dk" onclick="payDaily('${id}')">Update Daily</button>
-          <button class="btn btn-dk" style="margin-top:25px; background:#f1f5f9; color:var(--dk)" onclick="closeOverlays()">Close</button>
+          <h3>${s.name}</h3>
+          <p>ID: ${id} | Parent: ${s.ph}</p>
+          <button class="btn ${isPaid ? 'btn-dk' : 'btn-p'}" onclick="payMonthly('${id}', ${!isPaid})">${isPaid ? '✓ Payment Settled' : 'Collect Monthly Fee'}</button>
+          ${isPaid ? `<button class="btn" style="background:#25D366; color:white; margin-top:10px" onclick="sendReceipt('${s.name}', '${s.ph}', ${feeAmt})">📱 Send Advanced Receipt</button>` : ''}
+          <button class="btn btn-dk" style="margin-top:15px; background:#eee; color:#000" onclick="closeOverlays()">Close</button>
         `;
         document.getElementById("p-overlay").style.display = "block";
+      }
+
+      function sendReceipt(name, ph, amt) {
+        const date = document.getElementById("att-date").value;
+        const msg = `*OFFICIAL PAYMENT RECEIPT*%0A--------------------------%0A*Student:* ${name.toUpperCase()}%0A*Class:* Grade ${cg} - ${cs}%0A*Date:* ${date}%0A--------------------------%0A*Fee Type:* Monthly Tuition%0A*Paid Amount:* LKR ${amt}.00%0A*Status:* SETTLED ✅%0A--------------------------%0A_This is a computer-generated receipt._%0A*Sipsayura Institute Cloud*`;
+        window.open(`https://wa.me/94${ph.substring(1)}?text=${msg}`);
+      }
+
+      function openSummary() {
+        const date = document.getElementById("att-date").value;
+        const key = `${cs}_${cg}_${date}`;
+        const attData = db.att?.[key] || { p: [] };
+        const mFee = db.grades[cg].mFee;
+        let totalColl = 0;
+
+        document.getElementById("report-meta").innerText = `DATE: ${date} | SUBJECT: ${cs} | GRADE: ${cg}`;
+        
+        let html = `<table class="report-table"><tr><th>ID</th><th>Name</th><th>Status</th><th>Fee</th></tr>`;
+        (db.students || []).filter(s => s.g === cg && s.s === cs).forEach(s => {
+          const isP = attData.p.includes(s.id);
+          const feeVal = isP ? mFee : 0;
+          totalColl += feeVal;
+          html += `<tr><td>${s.id}</td><td>${s.name}</td><td>${isP ? 'PRESENT' : 'ABSENT'}</td><td>${feeVal}</td></tr>`;
+        });
+        html += `</table>`;
+        
+        const inst = totalColl * 0.2;
+        const final = totalColl - inst;
+
+        document.getElementById("sum-area").innerHTML = html;
+        document.getElementById("sum-fin").innerHTML = `
+          <div class="fin-line">Total Collection: Rs. ${totalColl}</div>
+          <div class="fin-line">Institute Charge (20%): Rs. ${inst}</div>
+          <div class="fin-line teacher-final">TEACHER FINAL FEE: Rs. ${final}</div>
+        `;
+        document.getElementById("s-overlay").style.display = "block";
+      }
+
+      function setTab(t, el) {
+        ["att", "reg", "set"].forEach(i => document.getElementById("tab-" + i).style.display = "none");
+        document.getElementById("tab-" + t).style.display = "block";
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+        el.classList.add("active");
       }
 
       function payMonthly(id, status) {
@@ -267,60 +259,6 @@
         save(); openProfile(id);
       }
 
-      function sendReceipt(name, ph, type, amt) {
-        const msg = `*PAYMENT SUCCESSFUL*%0A*Student:* ${name}%0A*Class:* Grade ${cg} - ${cs}%0A*Fee:* LKR ${amt}.00%0A*Status:* Settled ✅%0A_Sipsayura Elite_`;
-        window.open(`https://wa.me/94${ph.substring(1)}?text=${msg}`);
-      }
-
-      function openSummary() {
-        const date = document.getElementById("att-date").value;
-        const key = `${cs}_${cg}_${date}`;
-        const attData = db.att?.[key] || { p: [], daily: {} };
-        const month = date.slice(0, 7);
-        const mFee = db.grades[cg].mFee;
-        let mTotal = 0, dTotal = 0;
-        let html = `<table style="width:100%; font-size:10px; border-collapse:collapse; border:1px solid #eee"><tr style="background:#f9f9f9"><th>Student</th><th>Class Fee</th><th>Daily</th></tr>`;
-        
-        (db.students || []).filter(s => s.g === cg && s.s === cs).forEach(s => {
-            const paidToday = db.fees?.[month]?.[s.id]?.date === date;
-            const mPaid = paidToday ? mFee : 0;
-            const dPaid = attData.daily?.[s.id] || 0;
-            if(mPaid > 0 || dPaid > 0) {
-              mTotal += mPaid; dTotal += dPaid;
-              html += `<tr style="border-bottom:1px solid #eee"><td>${s.name}</td><td>${mPaid}</td><td>${dPaid}</td></tr>`;
-            }
-        });
-        html += `</table>`;
-        const total = mTotal + dTotal; const inst = total * 0.2;
-        document.getElementById("sum-area").innerHTML = html;
-        document.getElementById("sum-fin").innerHTML = `<div class="fin-row"><span>Monthly (Paid Today)</span><span>LKR ${mTotal}</span></div><div class="fin-row"><span>Daily Collected</span><span>LKR ${dTotal}</span></div><div class="fin-row" style="color:var(--d)"><span>Institute (20%)</span><span>-LKR ${inst.toFixed(0)}</span></div><div class="fin-row total-row"><span>Teacher Net</span><span>LKR ${(total-inst).toFixed(0)}</span></div>`;
-        document.getElementById("s-overlay").style.display = "block";
-      }
-
-      function updateChart() {
-        const year = new Date().getFullYear();
-        const monthlyData = new Array(12).fill(0);
-        Object.keys(db.att || {}).forEach(key => {
-            const d = key.split('_')[2];
-            if(d && d.startsWith(year)) {
-                const monthIdx = parseInt(d.split('-')[1]) - 1;
-                const c_g = key.split('_')[1];
-                let daySum = 0;
-                Object.keys(db.fees?.[d.slice(0, 7)] || {}).forEach(id => {
-                    if(db.fees[d.slice(0, 7)][id].date === d) daySum += (db.grades[c_g]?.mFee || 0);
-                });
-                Object.values(db.att[key].daily || {}).forEach(v => daySum += v);
-                monthlyData[monthIdx] += (daySum * 0.8);
-            }
-        });
-        const max = Math.max(...monthlyData, 1000);
-        const chart = document.getElementById("revenue-chart");
-        chart.innerHTML = "";
-        monthlyData.forEach(val => {
-            chart.innerHTML += `<div class="chart-bar" style="height:${(val/max)*100}%" data-val="LKR ${val.toFixed(0)}"></div>`;
-        });
-      }
-
       function markAtt(id, val) {
         const date = document.getElementById("att-date").value;
         const key = `${cs}_${cg}_${date}`;
@@ -329,22 +267,24 @@
         save();
       }
 
-      function markOthersAbsent() { save(); alert("Attendance synced."); }
-      function register() {
-        const n = document.getElementById("reg-n").value.trim();
-        const ph = document.getElementById("reg-ph").value.trim();
-        if(!n || !/^(07\d{8})$/.test(ph)) return alert("Error");
-        const id = Math.random().toString(36).substr(2, 5).toUpperCase();
-        if(!db.students) db.students = [];
-        db.students.push({ id, name: n, ph, g: cg, s: cs, joined: new Date().toLocaleDateString() });
-        save(); alert("Enrolled!"); setTab('att');
+      function addNewGrade() {
+        const name = prompt("Grade Number (e.g., 6):"); if(!name) return;
+        const fee = prompt("Monthly Fee Amount:");
+        if(!db.grades) db.grades = {};
+        db.grades[name] = { mFee: parseInt(fee) };
+        save();
       }
 
-      function closeOverlays() { document.getElementById("p-overlay").style.display="none"; document.getElementById("s-overlay").style.display="none"; render(); }
-      function exportData() {
-        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
-        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Sipsayura_Backup.json`; a.click();
+      function register() {
+        const n = document.getElementById("reg-n").value;
+        const ph = document.getElementById("reg-ph").value;
+        const id = `${cs.substring(0,3)}-${Math.floor(100+Math.random()*900)}`;
+        db.students.push({ id, name: n, ph, g: cg, s: cs });
+        save(); alert("Enrolled Successfully!"); setTab('att', document.querySelector(".nav-btn"));
       }
+
+      function closeOverlays() { document.querySelectorAll(".overlay").forEach(o => o.style.display="none"); }
+      function printReport() { window.print(); }
     </script>
   </body>
 </html>
