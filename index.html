@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura Elite - V26.5 Cloud</title>
+    <title>Sipsayura Elite - V27 Cloud</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -34,6 +34,13 @@
       .badge-due { background: #fee2e2; color: #991b1b; }
       .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); z-index: 3000; padding: 15px; backdrop-filter: blur(8px); overflow-y: auto; }
       .modal { background: white; max-width: 420px; margin: 20px auto; border-radius: 24px; padding: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); }
+      
+      /* Yearly Chart Styling */
+      .chart-container { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 10px 0; border-bottom: 2px solid #f1f5f9; margin-bottom: 10px; }
+      .chart-bar { flex: 1; background: var(--p); border-radius: 4px 4px 0 0; min-height: 2px; position: relative; transition: 0.5s; }
+      .chart-bar:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 8px; background: var(--dk); color: white; padding: 2px 4px; border-radius: 4px; }
+      .chart-label { display: flex; justify-content: space-between; font-size: 8px; color: #94a3b8; }
+
       .history-box { background: #f8fafc; padding: 12px; border-radius: 14px; margin: 15px 0; max-height: 120px; overflow-y: auto; border: 1px solid #eff6ff; }
       .history-item { font-size: 11px; padding: 5px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; }
       .fin-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; }
@@ -52,7 +59,7 @@
     <nav id="app-nav" style="display: none">
       <button class="nav-btn active" onclick="setTab('att', this)">Classroom</button>
       <button class="nav-btn" onclick="setTab('reg', this)">Enroll</button>
-      <button class="nav-btn" onclick="setTab('set', this)">Settings</button>
+      <button class="nav-btn" onclick="setTab('set', this)">Admin</button>
     </nav>
 
     <div class="container">
@@ -96,7 +103,16 @@
 
         <div id="tab-set" style="display: none">
           <div class="card">
-            <h3>Admin Panel</h3>
+            <h3 style="margin-top:0">Yearly Teacher Revenue</h3>
+            <div id="revenue-chart" class="chart-container"></div>
+            <div class="chart-label">
+                <span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span>
+                <span>JUL</span><span>AUG</span><span>SEP</span><span>OCT</span><span>NOV</span><span>DEC</span>
+            </div>
+            <p style="font-size:10px; color:#94a3b8; text-align:center; margin-top:10px;">Hover bars to see monthly total (Teacher Net)</p>
+          </div>
+          <div class="card">
+            <h3>Admin Controls</h3>
             <button class="btn btn-s" style="margin-bottom:10px" onclick="exportData()">Backup Cloud Data</button>
             <button class="btn btn-dk" onclick="location.reload()">Exit to Home</button>
           </div>
@@ -107,7 +123,7 @@
     <div id="p-overlay" class="overlay"><div class="modal" id="p-content"></div></div>
     <div id="s-overlay" class="overlay">
       <div class="modal">
-        <h3>Teacher's Master Sheet</h3>
+        <h3>Teacher's Detailed Sheet</h3>
         <div id="sum-area" style="max-height: 280px; overflow-y: auto; margin-bottom:15px"></div>
         <div class="fin-table" id="sum-fin"></div>
         <button class="btn btn-p" style="margin-top:15px" onclick="printReport()">Download PDF Report</button>
@@ -128,10 +144,10 @@
 
       firebase.initializeApp(firebaseConfig);
       const rdb = firebase.database();
-      let db = { students: [], att: {}, grades: {}, subs: ["MATH","SCI","SIN","ENG"] };
+      let db = { students: [], att: {}, grades: {}, subs: ["MATH","SCI","SIN","ENG"], fees: {} };
       let cg = "", cs = "";
 
-      rdb.ref('sip_v28').on('value', (s) => { if(s.val()) { db = s.val(); render(); refreshUI(); } });
+      rdb.ref('sip_v28').on('value', (s) => { if(s.val()) { db = s.val(); render(); refreshUI(); updateChart(); } });
       const save = () => rdb.ref('sip_v28').set(db);
 
       function refreshUI() {
@@ -191,7 +207,7 @@
         const date = document.getElementById("att-date").value;
         const key = `${cs}_${cg}_${date}`;
         if (!db.att[key]) db.att[key] = { p: [] };
-        save(); alert("Attendance finalized for unchecked students.");
+        save(); alert("Attendance sheet locked.");
       }
 
       function render() {
@@ -205,7 +221,7 @@
           const key = `${cs}_${cg}_${date}`;
           const isP = db.att?.[key]?.p?.includes(s.id);
           const isPaid = db.fees?.[month]?.[s.id]?.paid;
-          dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')" style="flex:1"><div style="font-weight:700">${s.name}</div><span class="badge ${isPaid ? 'badge-paid' : 'badge-due'}">${isPaid ? 'Month Settled' : 'Unpaid'}</span></div><input type="checkbox" style="width:24px; height:24px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
+          dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')" style="flex:1"><div style="font-weight:700">${s.name}</div><span class="badge ${isPaid ? 'badge-paid' : 'badge-due'}">${isPaid ? 'Month Paid' : 'Due'}</span></div><input type="checkbox" style="width:24px; height:24px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
         });
       }
 
@@ -267,7 +283,7 @@
       }
 
       function sendReceipt(name, ph, type, amt) {
-        const msg = `*PAYMENT SUCCESSFUL*%0A--------------------------%0A*Student:* ${name}%0A*Class:* Grade ${cg} - ${cs}%0A*Fee Type:* ${type} Fee%0A*Amount:* LKR ${amt}.00%0A*Status:* Settled ✅%0A--------------------------%0A_Thank you for your payment - Sipsayura Institute_`;
+        const msg = `*PAYMENT SUCCESSFUL*%0A--------------------------%0A*Student:* ${name}%0A*Class:* Grade ${cg} - ${cs}%0A*Fee Type:* ${type} Fee%0A*Amount:* LKR ${amt}.00%0A*Status:* Settled ✅%0A--------------------------%0A_Thank you - Sipsayura_`;
         window.open(`https://wa.me/94${ph.substring(1)}?text=${msg}`);
       }
 
@@ -278,7 +294,15 @@
         const month = date.slice(0, 7);
         const mFee = db.grades[cg].mFee;
         let mTotal = 0, dTotal = 0, pCount = 0;
-        let html = `<table style="width:100%; font-size:10px; border-collapse:collapse; border:1px solid #eee"><tr style="background:#f9f9f9"><th>Student</th><th>Status</th><th>Month</th><th>Daily</th></tr>`;
+        
+        // Detailed Table Header
+        let html = `<table style="width:100%; font-size:10px; border-collapse:collapse; border:1px solid #eee">
+          <tr style="background:#f9f9f9">
+            <th style="padding:5px; border:1px solid #eee">Student</th>
+            <th style="padding:5px; border:1px solid #eee">Status</th>
+            <th style="padding:5px; border:1px solid #eee">Class Fee</th>
+            <th style="padding:5px; border:1px solid #eee">Daily</th>
+          </tr>`;
         
         (db.students || []).filter(s => s.g === cg && s.s === cs).forEach(s => {
             const isP = attData.p.includes(s.id); if(isP) pCount++;
@@ -286,30 +310,70 @@
             const mPaid = paidToday ? mFee : 0;
             const dPaid = attData.daily?.[s.id] || 0;
             mTotal += mPaid; dTotal += dPaid;
-            html += `<tr style="border-bottom:1px solid #eee"><td>${s.name}</td><td style="color:${isP?'green':'red'}">${isP?'PRESENT':'ABSENT'}</td><td>${db.fees?.[month]?.[s.id]?.paid?'Settled':'Due'}</td><td>${dPaid}</td></tr>`;
+            html += `<tr style="border-bottom:1px solid #eee">
+                <td style="padding:5px; border:1px solid #eee"><b>${s.name}</b></td>
+                <td style="padding:5px; border:1px solid #eee; color:${isP?'green':'red'}">${isP?'PRESENT':'ABSENT'}</td>
+                <td style="padding:5px; border:1px solid #eee">${mPaid > 0 ? 'LKR '+mPaid : '-'}</td>
+                <td style="padding:5px; border:1px solid #eee">${dPaid > 0 ? dPaid : '-'}</td>
+            </tr>`;
         });
         html += `</table>`;
         const total = mTotal + dTotal; const inst = total * 0.2;
-        document.getElementById("sum-area").innerHTML = `<div style="margin-bottom:10px; font-weight:700">Present: ${pCount} | Total: ${db.students.filter(x=>x.g==cg&&x.s==cs).length}</div>` + html;
-        document.getElementById("sum-fin").innerHTML = `<div class="fin-row"><span>Today's Monthly</span><span>LKR ${mTotal}</span></div><div class="fin-row"><span>Daily Fees</span><span>LKR ${dTotal}</span></div><div class="fin-row" style="color:var(--d)"><span>Institute (20%)</span><span>-LKR ${inst.toFixed(0)}</span></div><div class="fin-row total-row"><span>Teacher Net</span><span>LKR ${(total-inst).toFixed(0)}</span></div>`;
+        document.getElementById("sum-area").innerHTML = `<div style="margin-bottom:10px; font-weight:700">Present: ${pCount} | Today's Attendance</div>` + html;
+        document.getElementById("sum-fin").innerHTML = `<div class="fin-row"><span>Today's Monthly (Paid)</span><span>LKR ${mTotal}</span></div><div class="fin-row"><span>Today's Daily Collected</span><span>LKR ${dTotal}</span></div><div class="fin-row" style="color:var(--d)"><span>Institute (20%)</span><span>-LKR ${inst.toFixed(0)}</span></div><div class="fin-row total-row"><span>Teacher Net Balance</span><span>LKR ${(total-inst).toFixed(0)}</span></div>`;
         document.getElementById("s-overlay").style.display = "block";
+      }
+
+      function updateChart() {
+        const currentYear = new Date().getFullYear();
+        const monthlyData = new Array(12).fill(0);
+        
+        // Sum all Teacher Net across all dates/grades in DB
+        Object.keys(db.att || {}).forEach(key => {
+            const dateParts = key.split('_')[2];
+            if(dateParts && dateParts.startsWith(currentYear)) {
+                const monthIndex = parseInt(dateParts.split('-')[1]) - 1;
+                const date = dateParts;
+                const c_sub = key.split('_')[0];
+                const c_grade = key.split('_')[1];
+                const monthKey = date.slice(0, 7);
+                
+                let dayTotal = 0;
+                // Sum monthly fees paid on this specific date
+                Object.keys(db.fees?.[monthKey] || {}).forEach(sid => {
+                    if(db.fees[monthKey][sid].date === date) dayTotal += (db.grades[c_grade]?.mFee || 0);
+                });
+                // Sum daily fees
+                Object.values(db.att[key].daily || {}).forEach(val => dayTotal += val);
+                
+                monthlyData[monthIndex] += (dayTotal * 0.8); // 80% to teacher
+            }
+        });
+
+        const max = Math.max(...monthlyData, 1000);
+        const chart = document.getElementById("revenue-chart");
+        chart.innerHTML = "";
+        monthlyData.forEach(val => {
+            const height = (val / max) * 100;
+            chart.innerHTML += `<div class="chart-bar" style="height:${height}%" data-val="LKR ${val.toFixed(0)}"></div>`;
+        });
       }
 
       function printReport() {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
         const date = document.getElementById("att-date").value;
-        doc.setFontSize(20); doc.text("SIPSAYURA TEACHER SUMMARY", 14, 20);
-        doc.setFontSize(10); doc.text(`Grade ${cg} ${cs} | ${date}`, 14, 28);
+        doc.setFontSize(20); doc.text("TEACHER DAILY MASTER REPORT", 14, 20);
+        doc.setFontSize(10); doc.text(`Grade ${cg} | ${cs} | ${date}`, 14, 28);
         doc.autoTable({ html: '#sum-area table', startY: 35 });
         doc.text(document.getElementById("sum-fin").innerText, 14, doc.lastAutoTable.finalY + 15);
-        doc.save(`Teacher_Report_${date}.pdf`);
+        doc.save(`Sipsayura_Teacher_Report_${date}.pdf`);
       }
 
       function closeOverlays() { document.getElementById("p-overlay").style.display="none"; document.getElementById("s-overlay").style.display="none"; render(); }
       function deleteStudent(id) { if(confirm("Delete student?")) { db.students = db.students.filter(x => x.id !== id); save(); closeOverlays(); } }
       function exportData() {
         const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
-        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Sipsayura_Backup.json`; a.click();
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Sipsayura_Cloud_Backup.json`; a.click();
       }
       initGrades();
     </script>
