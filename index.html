@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura Elite - V33 Strict Finance</title>
+    <title>Sipsayura Elite - V34 Pro Master</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -15,7 +15,7 @@
       #login-screen { position: fixed; inset: 0; background: var(--dk); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; color: white; text-align: center; }
       header { background: linear-gradient(135deg, var(--dk) 0%, #1e293b 100%); color: white; padding: 35px 20px; text-align: center; border-radius: 0 0 30px 30px; }
       nav { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 8px; display: flex; justify-content: space-around; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 1000; }
-      .nav-btn { padding: 10px 15px; border-radius: 12px; font-weight: 700; border: none; background: transparent; color: #64748b; font-size: 12px; }
+      .nav-btn { padding: 10px 15px; border-radius: 12px; font-weight: 700; border: none; background: transparent; color: #64748b; font-size: 12px; cursor: pointer; }
       .nav-btn.active { background: var(--p); color: white; }
       .container { padding: 15px; max-width: 500px; margin: auto; padding-bottom: 100px; }
       .card { background: white; padding: 18px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #f1f5f9; }
@@ -40,7 +40,7 @@
       <div class="login-box" style="max-width:320px; width:100%;">
         <span style="font-size: 50px;">🔐</span>
         <h1 style="margin:10px 0 5px; color:white;">Sipsayura Elite</h1>
-        <p style="font-size:10px; opacity:0.6; color:white;">V33 FINANCIAL MASTER</p>
+        <p style="font-size:10px; opacity:0.6; color:white;">V34 ATTENDANCE ANALYTICS</p>
         <input type="password" id="master-pin" style="background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.2); color:white; text-align:center; font-size:24px; letter-spacing:10px;" placeholder="••••" maxlength="4">
         <button class="btn btn-p" onclick="checkLogin()">Unlock System</button>
       </div>
@@ -76,7 +76,7 @@
                 <input type="text" id="att-q" placeholder="Search student name..." oninput="render()" style="margin-bottom:0" />
               </div>
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
-                <button class="btn btn-dk" onclick="openSummary()">📊 Professional Summary</button>
+                <button class="btn btn-dk" onclick="openSummary()">📊 Pro Summary</button>
                 <button class="btn btn-s" onclick="save()">✔️ Cloud Sync</button>
               </div>
               <div id="dom-list"></div>
@@ -92,7 +92,7 @@
             </div>
 
             <div id="tab-set" style="display: none">
-              <div class="card"><h3>Admin</h3></div>
+              <div class="card"><h3>Admin Settings</h3></div>
               <button class="btn btn-s" style="margin-bottom:10px" onclick="exportData()">Backup Data</button>
               <button class="btn btn-dk" onclick="location.reload()">Logout</button>
             </div>
@@ -187,7 +187,7 @@
           const isPaidDay = db.att?.[key]?.daily?.[s.id] > 0;
           
           let statusLabel = `<span class="badge badge-due">PENDING</span>`;
-          if(isPaidMonth) statusLabel = `<span class="badge badge-paid">MONTHLY SETTLED</span>`;
+          if(isPaidMonth) statusLabel = `<span class="badge badge-paid">MONTHLY DONE</span>`;
           else if(isPaidDay) statusLabel = `<span class="badge badge-day">TODAY PAID</span>`;
 
           dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')" style="flex:1"><b>${s.name}</b><br>${statusLabel}</div><input type="checkbox" style="width:22px; height:22px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
@@ -197,66 +197,75 @@
       function register() {
         const n = document.getElementById("reg-n").value.trim();
         const ph = document.getElementById("reg-ph").value.trim();
-        if(!n || !ph) return alert("Fill all fields");
+        if(!n || !ph) return alert("Fill Name and Phone");
         if(!db.students) db.students = [];
         db.students.push({ id: `S-${Date.now().toString().slice(-4)}`, name: n, ph, g: cg, s: cs, joined: new Date().toLocaleDateString() });
-        save(); alert("Enrolled!"); setTab('att');
+        save(); alert("Enrolled!");
+        document.getElementById("reg-n").value = ""; 
+        document.getElementById("reg-ph").value = "";
+        setTab('att');
       }
 
-      // STRICT PAYMENT PROFILE
       function openProfile(id) {
         const s = db.students.find(x => x.id === id);
         const date = document.getElementById("att-date").value;
         const month = date.slice(0, 7);
         const key = `${cs}_${cg}_${date}`;
-        
         const isPaidMonth = db.fees?.[month]?.[id]?.paid;
         const isPaidDay = db.att?.[key]?.daily?.[id] > 0;
         const mFee = db.grades[cg].mFee;
 
-        // Check if ever paid daily this month
-        let hasDailyThisMonth = false;
+        // Analytics
+        let tCls = 0, pDay = 0;
         Object.keys(db.att || {}).forEach(k => {
-          if(k.startsWith(`${cs}_${cg}_${month}`) && db.att[k].daily?.[id] > 0) hasDailyThisMonth = true;
+          if(k.startsWith(`${cs}_${cg}_${month}`)) { tCls++; if(db.att[k].p.includes(id)) pDay++; }
         });
+        const rate = tCls > 0 ? ((pDay/tCls)*100).toFixed(0) : 0;
+
+        let hasDailyThisMonth = false;
+        Object.keys(db.att || {}).forEach(k => { if(k.startsWith(`${cs}_${cg}_${month}`) && db.att[k].daily?.[id] > 0) hasDailyThisMonth = true; });
 
         let historyHTML = "";
         Object.keys(db.fees || {}).forEach(m => { if(db.fees[m][id]?.paid) historyHTML += `<div style="display:flex; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom:1px solid #f1f5f9;"><span>${m}</span><span style="color:#10b981; font-weight:700;">PAID</span></div>`; });
 
         let unpaidDays = 0;
         Object.keys(db.att || {}).forEach(k => {
-          if(k.startsWith(`${cs}_${cg}_${month}`)) {
-             if(db.att[k].p.includes(id) && !(db.att[k].daily?.[id] > 0) && !isPaidMonth) unpaidDays++;
-          }
+          if(k.startsWith(`${cs}_${cg}_${month}`)) { if(db.att[k].p.includes(id) && !(db.att[k].daily?.[id] > 0) && !isPaidMonth) unpaidDays++; }
         });
         const debt = unpaidDays * 250;
 
         document.getElementById("p-content").innerHTML = `
           <div style="text-align:center; margin-bottom:15px;"><h3 style="margin:0;">${s.name.toUpperCase()}</h3></div>
           
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px; text-align:center;">
+              <div style="background:#f8fafc; padding:10px; border-radius:12px; border:1px solid #e2e8f0;"><p style="margin:0; font-size:9px;">TOTAL</p><b>${tCls}</b></div>
+              <div style="background:#f8fafc; padding:10px; border-radius:12px; border:1px solid #e2e8f0;"><p style="margin:0; font-size:9px;">PRESENT</p><b style="color:var(--s);">${pDay}</b></div>
+              <div style="background:#0f172a; padding:10px; border-radius:12px; color:white;"><p style="margin:0; font-size:9px; opacity:0.7;">RATE</p><b>${rate}%</b></div>
+          </div>
+
           <div class="card" style="background:${isPaidMonth ? '#f0fdf4' : '#fff'}; border:1px solid ${isPaidMonth ? '#bbf7d0' : '#e2e8f0'}; opacity:${hasDailyThisMonth && !isPaidMonth ? '0.5' : '1'}">
-              <p style="font-size:10px; font-weight:800; color:#4f46e5; margin:0 0 5px 0;">MONTHLY PLAN</p>
+              <p style="font-size:10px; font-weight:800; color:#4f46e5; margin:0 0 5px 0;">MONTHLY STATUS</p>
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-weight:700;">${isPaidMonth ? '✅ FULL MONTH PAID' : 'PENDING'}</span>
-                  ${!hasDailyThisMonth || isPaidMonth ? `<button class="btn btn-p" style="width:auto; padding:5px 10px;" onclick="payMonthly('${id}', ${!isPaidMonth})">${isPaidMonth ? 'Undo' : 'Pay Rs.' + mFee}</button>` : '<small>Locked (Daily Payer)</small>'}
+                  <span style="font-weight:700;">${isPaidMonth ? '✅ PAID' : 'PENDING'}</span>
+                  ${!hasDailyThisMonth || isPaidMonth ? `<button class="btn btn-p" style="width:auto; padding:5px 10px;" onclick="payMonthly('${id}', ${!isPaidMonth})">${isPaidMonth ? 'Undo' : 'Pay Rs.' + mFee}</button>` : '<small>Daily Payer</small>'}
               </div>
           </div>
 
           ${!isPaidMonth ? `
           <div class="card" style="border-left:4px solid ${isPaidDay ? 'var(--y)' : 'var(--d)'};">
-              <p style="font-size:10px; font-weight:800; color:var(--dk); margin:0 0 5px 0;">DAILY PAYMENT STATUS</p>
+              <p style="font-size:10px; font-weight:800; color:var(--dk); margin:0 0 5px 0;">DAILY PAYMENT</p>
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span>${isPaidDay ? '<b style="color:var(--y)">TODAY PAYMENT DONE</b>' : 'Arrears: <b style="color:var(--d)">Rs. '+debt+'</b>'}</span>
+                  <span>${isPaidDay ? '<b style="color:var(--y)">TODAY PAID</b>' : 'Arrears: <b style="color:var(--d)">Rs. '+debt+'</b>'}</span>
                   ${!isPaidDay ? `<button class="btn btn-dk" style="width:auto; padding:5px 12px;" onclick="payDaily('${id}', 250)">Pay 250</button>` : ''}
               </div>
           </div>` : ''}
 
-          <div style="margin-top:15px;"><p style="font-size:10px; font-weight:800; color:#64748b; margin-bottom:8px;">MONTHLY LEDGER</p>
+          <div style="margin-top:15px;"><p style="font-size:10px; font-weight:800; color:#64748b; margin-bottom:8px;">MONTHLY HISTORY</p>
               <div style="max-height:60px; overflow-y:auto; background:#f8fafc; padding:8px; border-radius:10px;">${historyHTML || 'No history'}</div>
           </div>
 
           <div style="margin-top:20px;">
-              <button class="btn btn-dk" style="background:#25d366; margin-bottom:10px;" onclick="sendAdvancedReceipt('${s.name}', '${s.ph}', '${isPaidMonth?'Monthly':'Daily'}', ${isPaidMonth?mFee:(isPaidDay?250:debt)})">📱 Advanced WhatsApp Receipt</button>
+              <button class="btn btn-dk" style="background:#25d366; margin-bottom:10px;" onclick="sendAdvancedReceipt('${s.name}', '${s.ph}', '${isPaidMonth?'Monthly':'Daily'}', ${isPaidMonth?mFee:(isPaidDay?250:debt)})">📱 WhatsApp Slip</button>
               <button class="btn btn-dk" style="background:#f1f5f9; color:#64748b;" onclick="closeOverlays()">Close</button>
           </div>
           <div style="margin-top:20px; text-align:center;"><button onclick="deleteStudent('${id}')" style="background:none; border:none; color:#cbd5e1; font-size:10px; text-decoration:underline;">Remove Record</button></div>`;
@@ -272,22 +281,7 @@
       function sendAdvancedReceipt(n, ph, type, amt) {
         const tid = "TRX" + Date.now().toString().slice(-6);
         const date = document.getElementById("att-date").value;
-        const msg = 
-          `*SIPSAYURA EDUCATION INSTITUTE*%0A` +
-          `*OFFICIAL DIGITAL RECEIPT*%0A` +
-          `----------------------------------------%0A` +
-          `*RECEIPT NO:* ${tid}%0A` +
-          `*STUDENT:* ${n.toUpperCase()}%0A` +
-          `*CLASS:* Grade ${cg} - ${cs}%0A` +
-          `*DATE:* ${date}%0A` +
-          `----------------------------------------%0A` +
-          `*PAYMENT SUMMARY*%0A` +
-          `Plan Type: ${type} Payment%0A` +
-          `Amount Paid: *Rs. ${amt.toLocaleString()}.00*%0A` +
-          `Status: *SUCCESS / VERIFIED* ✅%0A` +
-          `----------------------------------------%0A` +
-          `_This is a system-generated receipt._%0A` +
-          `*Thank you for your trust.*`;
+        const msg = `*SIPSAYURA INSTITUTE*%0A*OFFICIAL RECEIPT*%0A*NO:* ${tid}%0A*STUDENT:* ${n.toUpperCase()}%0A*CLASS:* Grade ${cg} ${cs}%0A*DATE:* ${date}%0A*AMOUNT:* Rs. ${amt}.00%0A*STATUS:* PAID ✅`;
         window.open(`https://wa.me/94${ph.substring(1)}?text=${msg}`);
       }
 
@@ -311,7 +305,7 @@
         const total = mTotal + dTotal; const inst = total * 0.20; const teacher = total - inst;
         html += `</table></div>`;
         document.getElementById("sum-area").innerHTML = html;
-        document.getElementById("sum-fin").innerHTML = `<div style="margin-top:20px; background:#0f172a; color:white; padding:20px; border-radius:15px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px; opacity:0.8;"><span>Gross Collection:</span><span>Rs. ${total}</span></div><div style="display:flex; justify-content:space-between; margin-bottom:15px; color:#f43f5e;"><span>Institute (20%):</span><span>- Rs. ${inst.toFixed(0)}</span></div><div style="display:flex; justify-content:space-between; border-top:1px solid #334155; padding-top:15px;"><span style="font-weight:800; font-size:16px;">TEACHER FINAL:</span><span style="font-weight:800; font-size:20px; color:#10b981;">Rs. ${teacher.toFixed(0)}</span></div></div>`;
+        document.getElementById("sum-fin").innerHTML = `<div style="margin-top:20px; background:#0f172a; color:white; padding:20px; border-radius:15px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px; opacity:0.8;"><span>Gross Collection:</span><span>Rs. ${total}</span></div><div style="display:flex; justify-content:space-between; margin-bottom:15px; color:#f43f5e;"><span>Institute (20%):</span><span>- Rs. ${inst.toFixed(0)}</span></div><div style="display:flex; justify-content:space-between; border-top:1px solid #334155; padding-top:15px;"><span style="font-weight:800;">TEACHER FINAL:</span><span style="font-weight:800; color:#10b981;">Rs. ${teacher.toFixed(0)}</span></div></div>`;
         document.getElementById("s-overlay").style.display = "block";
       }
 
@@ -325,7 +319,7 @@
         const finalY = doc.lastAutoTable.finalY + 10;
         doc.setFillColor(248, 250, 252); doc.rect(120, finalY, 75, 45, 'FD');
         doc.setTextColor(15, 23, 42); doc.text(document.getElementById("sum-fin").innerText, 125, finalY + 10);
-        doc.save(`Sipsayura_Report_${date}.pdf`);
+        doc.save(`Report_${date}.pdf`);
       }
 
       function payMonthly(id, st) {
