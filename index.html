@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura Elite - V38 Arrears Lock</title>
+    <title>Sipsayura Elite - V38 Master</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -29,6 +29,7 @@
       .badge { font-size: 9px; padding: 3px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; }
       .badge-paid { background: #dcfce7; color: #166534; }
       .badge-day { background: #fef9c3; color: #854d0e; }
+      .badge-arr { background: #fae8ff; color: #701a75; }
       .badge-due { background: #fee2e2; color: #991b1b; }
       .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 3000; padding: 15px; backdrop-filter: blur(8px); overflow-y: auto; }
       .modal { background: white; max-width: 480px; margin: 10px auto; border-radius: 24px; padding: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); }
@@ -41,7 +42,7 @@
       <div class="login-box" style="max-width:320px; width:100%;">
         <span style="font-size: 50px;">🔐</span>
         <h1 style="margin:10px 0 5px; color:white;">Sipsayura Elite</h1>
-        <p style="font-size:10px; opacity:0.6; color:white;">V38 ARREARS SETTLEMENT LOCK</p>
+        <p style="font-size:10px; opacity:0.6; color:white;">V38 ARREARS TRACKER</p>
         <input type="password" id="master-pin" style="background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.2); color:white; text-align:center; font-size:24px; letter-spacing:10px;" placeholder="••••" maxlength="4">
         <button class="btn btn-p" onclick="checkLogin()">Unlock System</button>
       </div>
@@ -77,16 +78,41 @@
                 <input type="text" id="att-q" placeholder="Search student name..." oninput="render()" style="margin-bottom:0" />
               </div>
               <div id="sch-notice" style="margin-bottom:10px; font-size:11px; color:var(--p); font-weight:bold;"></div>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
+                <button class="btn btn-dk" onclick="openSummary()">📊 Pro Summary</button>
+                <button class="btn btn-s" onclick="save()">✔️ Cloud Sync</button>
+              </div>
               <div id="dom-list"></div>
-              <button class="btn btn-s" onclick="save()" style="margin-top:15px;">✔️ Sync All Changes</button>
             </div>
 
             <div id="tab-reg" style="display: none">
-              <div class="card"><h3>Enroll Student</h3><input type="text" id="reg-n" placeholder="Full Name" /><input type="tel" id="reg-ph" placeholder="Parent WhatsApp" maxlength="10"/><button class="btn btn-p" onclick="register()">Confirm Enrollment</button></div>
+              <div class="card">
+                <h3>Enroll Student</h3>
+                <input type="text" id="reg-n" placeholder="Full Name" />
+                <input type="tel" id="reg-ph" placeholder="Parent WhatsApp (07XXXXXXXX)" maxlength="10"/>
+                <button class="btn btn-p" onclick="register()">Confirm Enrollment</button>
+              </div>
             </div>
 
             <div id="tab-set" style="display: none">
-              <div class="card"><h3>Class Schedule</h3><div class="sch-box"><label style="font-size:10px; font-weight:800;">RECURRING DAY</label><select id="sch-day"><option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option><option value="Friday">Friday</option><option value="Saturday">Saturday</option><option value="Sunday">Sunday</option></select><div style="display:flex; gap:10px;"><div style="flex:1"><label style="font-size:10px; font-weight:800;">TIME</label><input type="time" id="sch-time"></div><div style="flex:1"><label style="font-size:10px; font-weight:800;">HRS</label><input type="number" id="sch-dur"></div></div><button class="btn btn-p" onclick="updateSchedule()">Save Schedule</button></div></div>
+              <div class="card"><h3>Class Schedule</h3>
+                <div class="sch-box">
+                    <label style="font-size:10px; font-weight:800;">RECURRING DAY</label>
+                    <select id="sch-day">
+                        <option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option><option value="Friday">Friday</option><option value="Saturday">Saturday</option><option value="Sunday">Sunday</option>
+                    </select>
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1"><label style="font-size:10px; font-weight:800;">TIME</label><input type="time" id="sch-time"></div>
+                        <div style="flex:1"><label style="font-size:10px; font-weight:800;">HRS</label><input type="number" id="sch-dur"></div>
+                    </div>
+                    <button class="btn btn-p" onclick="updateSchedule()">Save Schedule</button>
+                </div>
+              </div>
+              <div class="card"><h3>Monthly Ledger</h3>
+                <input type="month" id="ledger-month">
+                <button class="btn btn-dk" onclick="generateMonthlySummary()">Download Full Month PDF</button>
+              </div>
+              <button class="btn btn-s" style="margin-bottom:10px" onclick="exportData()">Backup JSON</button>
               <button class="btn btn-dk" onclick="location.reload()">Logout</button>
             </div>
           </div>
@@ -94,28 +120,59 @@
     </div>
 
     <div id="p-overlay" class="overlay"><div class="modal" id="p-content"></div></div>
+    <div id="s-overlay" class="overlay">
+      <div class="modal" style="max-width: 650px;">
+        <div id="sum-area"></div><div id="sum-fin"></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
+            <button class="btn btn-p" onclick="printReport()">Download PDF</button>
+            <button class="btn btn-dk" style="background:#f1f5f9; color:var(--dk)" onclick="closeOverlays()">Close</button>
+        </div>
+      </div>
+    </div>
 
     <script>
-      function checkLogin() { if(document.getElementById("master-pin").value === "9988") { sessionStorage.setItem("auth_sip", "true"); document.getElementById("login-screen").style.display = "none"; document.getElementById("app-content").style.display = "block"; initApp(); } else { alert("Denied"); } }
-      if(sessionStorage.getItem("auth_sip") === "true") { document.getElementById("login-screen").style.display = "none"; document.getElementById("app-content").style.display = "block"; }
+      function checkLogin() {
+        if(document.getElementById("master-pin").value === "9988") {
+            sessionStorage.setItem("auth_sip", "true");
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("app-content").style.display = "block";
+            initApp();
+        } else { alert("Denied"); }
+      }
+      if(sessionStorage.getItem("auth_sip") === "true") {
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("app-content").style.display = "block";
+      }
 
-      const firebaseConfig = { apiKey: "AIzaSyARz6yYnI8d2KR6wWl--PT6nEnVikSplms", authDomain: "sipsayura-96757.firebaseapp.com", databaseURL: "https://sipsayura-96757-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "sipsayura-96757", storageBucket: "sipsayura-96757.firebasestorage.app", messagingSenderId: "148140063507", appId: "1:148140063507:web:41a1046fa7aea4885238e6" };
+      const firebaseConfig = {
+        apiKey: "AIzaSyARz6yYnI8d2KR6wWl--PT6nEnVikSplms",
+        authDomain: "sipsayura-96757.firebaseapp.com",
+        databaseURL: "https://sipsayura-96757-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "sipsayura-96757",
+        storageBucket: "sipsayura-96757.firebasestorage.app",
+        messagingSenderId: "148140063507",
+        appId: "1:148140063507:web:41a1046fa7aea4885238e6"
+      };
       firebase.initializeApp(firebaseConfig);
       const rdb = firebase.database();
       let db = { students: [], att: {}, grades: {}, subs: ["MATH","SCI","SIN","ENG"], fees: {}, schedules: {} };
       let cg = "", cs = "";
 
       function initApp() { rdb.ref('sip_v28').on('value', (s) => { if(s.val()) { db = s.val(); render(); refreshUI(); } }); }
+      initApp();
       const save = () => rdb.ref('sip_v28').set(db);
 
       function refreshUI() {
         if(document.getElementById('v-grades').style.display !== 'none') initGrades();
         if(document.getElementById('v-subs').style.display !== 'none') initSubs();
+        if(cs && cg) loadScheduleUI();
       }
 
       function initGrades() {
         const d = document.getElementById("dom-grades"); d.innerHTML = "";
-        Object.keys(db.grades || {}).forEach(g => { d.innerHTML += `<div class="grade-card" onclick="selG('${g}')"><h3>Grade ${g}</h3><small>Fee: ${db.grades[g].mFee}</small></div>`; });
+        Object.keys(db.grades || {}).forEach(g => {
+          d.innerHTML += `<div class="grade-card" onclick="selG('${g}')"><h3>Grade ${g}</h3><small>Fee: ${db.grades[g].mFee}</small></div>`;
+        });
       }
 
       function selG(g) { cg = g; document.getElementById("lbl-grade").innerText = "Grade " + g; showV("v-subs"); initSubs(); }
@@ -132,11 +189,49 @@
         ["att", "reg", "set"].forEach(i => document.getElementById("tab-" + i).style.display = "none");
         document.getElementById("tab-" + t).style.display = "block";
         document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-        if (el) el.classList.add("active"); render();
+        if (el) el.classList.add("active"); 
+        if(t === 'set') loadScheduleUI();
+        render();
       }
 
-      function loadScheduleUI() { const key = `${cs}_${cg}`; const s = db.schedules?.[key] || { day: 'Monday', time: '08:30', dur: '2' }; document.getElementById("sch-day").value = s.day; document.getElementById("sch-time").value = s.time; document.getElementById("sch-dur").value = s.dur; }
-      function updateSchedule() { if(!db.schedules) db.schedules = {}; db.schedules[`${cs}_${cg}`] = { day: document.getElementById("sch-day").value, time: document.getElementById("sch-time").value, dur: document.getElementById("sch-dur").value }; save(); alert("Saved"); }
+      function loadScheduleUI() {
+          const key = `${cs}_${cg}`;
+          const s = db.schedules?.[key] || { day: 'Monday', time: '08:30', dur: '2' };
+          document.getElementById("sch-day").value = s.day;
+          document.getElementById("sch-time").value = s.time;
+          document.getElementById("sch-dur").value = s.dur;
+      }
+
+      function updateSchedule() {
+          if(!db.schedules) db.schedules = {};
+          db.schedules[`${cs}_${cg}`] = {
+              day: document.getElementById("sch-day").value,
+              time: document.getElementById("sch-time").value,
+              dur: document.getElementById("sch-dur").value
+          };
+          save(); alert("Schedule Updated!");
+      }
+
+      function getArrears(sid, currentKey, month) {
+          let total = 0;
+          Object.keys(db.att || {}).forEach(k => {
+              if(k.startsWith(`${cs}_${cg}_${month}`) && k !== currentKey) {
+                  const wasP = db.att[k].p.includes(sid);
+                  const paidD = db.att[k].daily?.[sid] > 0;
+                  const paidM = db.fees?.[month]?.[sid]?.paid;
+                  // If they were present, didn't pay daily then, and still haven't paid monthly
+                  if(wasP && !paidD && !paidM) {
+                      // Check if they settled this specific date's debt on a later date
+                      let alreadySettled = false;
+                      Object.keys(db.att || {}).forEach(laterK => {
+                          if(db.att[laterK].settlements?.[sid]?.includes(k)) alreadySettled = true;
+                      });
+                      if(!alreadySettled) total += 250;
+                  }
+              }
+          });
+          return total;
+      }
 
       function render() {
         const dateInput = document.getElementById("att-date").value || new Date().toISOString().split('T')[0];
@@ -148,10 +243,12 @@
         const month = dateInput.slice(0, 7);
         const dom = document.getElementById("dom-list"); dom.innerHTML = "";
 
-        if(sch.day && sch.day !== selectedDayName) {
-            document.getElementById("sch-notice").innerText = `⚠️ HIDDEN: Selected date is ${selectedDayName}. Class is scheduled for ${sch.day}.`;
+        if(sch.day !== selectedDayName) {
+            document.getElementById("sch-notice").innerText = `⚠️ Selected date is ${selectedDayName}. Class is scheduled for ${sch.day}.`;
             return;
-        } else { document.getElementById("sch-notice").innerText = `✅ Scheduled: ${sch.time || '--'} (${sch.dur || '--'}h)`; }
+        } else {
+            document.getElementById("sch-notice").innerText = `✅ Scheduled Class: ${sch.time} (${sch.dur} hrs)`;
+        }
 
         const list = (db.students || []).filter(s => s.g === cg && s.s === cs && s.name.toLowerCase().includes(q));
         
@@ -159,21 +256,83 @@
           const key = `${cs}_${cg}_${dateInput}`;
           const isP = db.att?.[key]?.p?.includes(s.id);
           const isPaidMonth = db.fees?.[month]?.[s.id]?.paid;
-          const isPaidToday = db.att?.[key]?.daily?.[s.id] > 0;
-          
-          // Arrears Logic (Does not require editing old dates)
-          let hasArrears = false;
-          Object.keys(db.att || {}).forEach(k => {
-              if(k.startsWith(`${cs}_${cg}_${month}`) && k !== key) {
-                  const wasPresent = db.att[k].p.includes(s.id);
-                  const paidInThatSlot = db.att[k].daily?.[s.id] > 0;
-                  // If they were present but didn't pay in that date slot AND haven't paid full monthly
-                  if(wasPresent && !paidInThatSlot && !isPaidMonth) hasArrears = true;
-              }
-          });
+          const isPaidDayToday = db.att?.[key]?.daily?.[s.id] > 0;
+          const isSettlementToday = db.att?.[key]?.settlements?.[s.id]?.length > 0;
+          const arrAmt = getArrears(s.id, key, month);
 
-          dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')" style="flex:1"><b style="color: ${hasArrears && !isPaidToday ? 'var(--d)' : 'var(--dk)'}">${s.name.toUpperCase()}</b><br><small>${isPaidMonth ? '✅ MONTHLY' : (isPaidToday ? '✅ PAID TODAY' : (hasArrears ? '❌ UNSETTLED' : 'PENDING'))}</small></div><input type="checkbox" style="width:22px; height:22px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
+          let statusLabel = `<span class="badge badge-due">PENDING</span>`;
+          if(isPaidMonth) statusLabel = `<span class="badge badge-paid">MONTHLY DONE</span>`;
+          else if(isPaidDayToday) statusLabel = `<span class="badge badge-day">TODAY PAID</span>`;
+          
+          if(isSettlementToday) statusLabel += ` <span class="badge badge-arr">ARREARS SETTLED</span>`;
+
+          dom.innerHTML += `
+            <div class="std-row">
+                <div onclick="openProfile('${s.id}')" style="flex:1">
+                    <b style="color: ${arrAmt > 0 ? 'var(--d)' : 'var(--dk)'}">${s.name.toUpperCase()}</b>
+                    ${arrAmt > 0 ? `<br><small style="color:red; font-weight:800;">ARREARS: Rs.${arrAmt}</small>` : ''}
+                    <br>${statusLabel}
+                </div>
+                <input type="checkbox" style="width:22px; height:22px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)">
+            </div>`;
         });
+      }
+
+      function openSummary() {
+        const date = document.getElementById("att-date").value;
+        const key = `${cs}_${cg}_${date}`;
+        const attData = db.att?.[key] || { p: [], daily: {}, settlements: {} };
+        const mFee = db.grades[cg].mFee;
+        const sch = db.schedules?.[`${cs}_${cg}`] || { time: '--', dur: '--' };
+        let mTotal = 0, dTotal = 0, sTotal = 0;
+
+        let html = `<div id="pdf-content"><div style="text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:15px;"><h2 style="margin:0">SIPSAYURA ELITE - TEACHER SHEET</h2><p>${cs} | GRADE ${cg} | ${date}</p></div>`;
+        html += `<table id="sum-table" style="width:100%; border-collapse:collapse; margin-bottom:20px;"><tr style="background:#eee;"><th>STUDENT</th><th>TYPE</th><th style="text-align:right">AMOUNT</th></tr>`;
+        
+        (db.students || []).filter(s => s.g === cg && s.s === cs).forEach(s => {
+            const isPaidMonth = db.fees?.[date.slice(0, 7)]?.[s.id]?.paid;
+            const dayAmt = attData.daily?.[s.id] || 0;
+            const setAmt = (attData.settlements?.[s.id]?.length || 0) * 250;
+
+            if(isPaidMonth || dayAmt > 0 || setAmt > 0) {
+                if(isPaidMonth) { mTotal += mFee; html += `<tr style="border-bottom:1px solid #ddd;"><td>${s.name.toUpperCase()}</td><td align="center">MONTHLY</td><td align="right">Rs.${mFee}</td></tr>`; }
+                if(dayAmt > 0) { dTotal += dayAmt; html += `<tr style="border-bottom:1px solid #ddd;"><td>${s.name.toUpperCase()}</td><td align="center">DAILY</td><td align="right">Rs.${dayAmt}</td></tr>`; }
+                if(setAmt > 0) { sTotal += setAmt; html += `<tr style="border-bottom:1px solid #ddd; color:#701a75;"><td>${s.name.toUpperCase()}</td><td align="center">ARREARS SETTLED</td><td align="right">Rs.${setAmt}</td></tr>`; }
+            }
+        });
+
+        html += `</table>`;
+        document.getElementById("sum-area").innerHTML = html;
+        const total = mTotal + dTotal + sTotal;
+        document.getElementById("sum-fin").innerHTML = `<div style="background:#0f172a; color:white; padding:15px; border-radius:10px; margin-top:10px;"><b>TOTAL TODAY: Rs. ${total}</b><br><small>Teacher Net (80%): Rs. ${(total*0.8).toFixed(0)}</small></div>`;
+        document.getElementById("s-overlay").style.display = "block";
+      }
+
+      function printReport() {
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        doc.text(`SIPSAYURA ELITE - ${cs} G${cg}`, 14, 15);
+        doc.autoTable({ html: '#sum-table', startY: 30, headStyles: {fillColor:[15, 23, 42]} });
+        doc.text(document.getElementById("sum-fin").innerText, 14, doc.lastAutoTable.finalY + 15);
+        doc.save(`Teacher_Report_${cs}_${document.getElementById("att-date").value}.pdf`);
+      }
+
+      function generateMonthlySummary() {
+          const month = document.getElementById("ledger-month").value;
+          if(!month) return alert("Select Month");
+          const { jsPDF } = window.jspdf; const doc = new jsPDF();
+          doc.text(`MONTHLY COLLECTION: ${month}`, 14, 15);
+          let data = []; let grandTotal = 0;
+          const sortedDates = Object.keys(db.att).filter(k => k.startsWith(`${cs}_${cg}_${month}`)).sort();
+          sortedDates.forEach(k => {
+              const dayDate = k.split('_')[2];
+              let daySum = 0;
+              (db.students || []).forEach(s => { if(db.fees?.[month]?.[s.id]?.date === dayDate) daySum += db.grades[cg].mFee; });
+              Object.values(db.att[k].daily || {}).forEach(v => daySum += v);
+              Object.keys(db.att[k].settlements || {}).forEach(sid => { daySum += (db.att[k].settlements[sid].length * 250); });
+              if(daySum > 0) { data.push([dayDate, `Rs. ${daySum.toLocaleString()}`]); grandTotal += daySum; }
+          });
+          doc.autoTable({ head: [['Date', 'Collection']], body: data, startY: 30, foot: [['GRAND TOTAL', `Rs. ${grandTotal.toLocaleString()}`]], headStyles: {fillColor:[15, 23, 42]} });
+          doc.save(`Monthly_Ledger_${month}.pdf`);
       }
 
       function openProfile(id) {
@@ -182,55 +341,52 @@
         const month = date.slice(0, 7);
         const key = `${cs}_${cg}_${date}`;
         const isPaidMonth = db.fees?.[month]?.[id]?.paid;
-        const isPaidToday = db.att?.[key]?.daily?.[id] > 0;
-
-        let unpaidCount = 0;
-        let arrearsDates = [];
-        Object.keys(db.att || {}).forEach(k => {
-          if(k.startsWith(`${cs}_${cg}_${month}`)) {
-            if(db.att[k].p.includes(id) && !(db.att[k].daily?.[id] > 0) && !isPaidMonth) {
-                unpaidCount++;
-                arrearsDates.push(k.split('_')[2]);
-            }
-          }
-        });
+        const isPaidDayToday = db.att?.[key]?.daily?.[id] > 0;
+        const arrAmt = getArrears(id, key, month);
 
         document.getElementById("p-content").innerHTML = `
           <h3 style="margin:0">${s.name.toUpperCase()}</h3>
-          <div class="card" style="margin:15px 0; background:${isPaidMonth?'#f0fdf4':'#fff'}">
+          <div class="card" style="background:${isPaidMonth?'#f0fdf4':'#fff'}">
             <small>MONTHLY PLAN</small>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <b>${isPaidMonth?'PAID':'NOT PAID'}</b>
-                <button class="btn btn-p" style="width:auto; padding:5px 10px;" onclick="payMonthly('${id}', ${!isPaidMonth})">${isPaidMonth?'Undo':'Pay'}</button>
+                <b>${isPaidMonth?'PAID':'PENDING'}</b>
+                <button class="btn btn-p" style="width:auto; padding:5px 10px;" onclick="payMonthly('${id}', ${!isPaidMonth})">Pay</button>
             </div>
           </div>
-          <div class="card" style="border-left:4px solid ${isPaidToday ? 'var(--s)' : (unpaidCount > 0 ? 'var(--d)' : 'var(--y)')}">
-            <small>DAILY / ARREARS (LOCK SYSTEM)</small>
+          <div class="card" style="border-left:4px solid ${isPaidDayToday? 'var(--y)':'var(--d)'}">
+            <small>DAILY FEE</small>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div><b>${isPaidToday ? 'SETTLED' : 'DUE'}</b><br><small>${unpaidCount} Days Outstanding</small></div>
-                ${!isPaidToday && unpaidCount > 0 ? `<button class="btn btn-dk" style="width:auto; padding:5px 12px; background:var(--d)" onclick="settleArrears('${id}')">Settle All Today</button>` : (!isPaidToday ? `<button class="btn btn-dk" style="width:auto; padding:5px 12px;" onclick="payDaily('${id}', 250)">Pay Today</button>` : '')}
+                <b>${isPaidDayToday?'PAID TODAY':'NOT PAID'}</b>
+                ${!isPaidDayToday? `<button class="btn btn-dk" style="width:auto; padding:5px 12px;" onclick="payDaily('${id}', 250)">Pay 250</button>`:''}
             </div>
           </div>
+          ${arrAmt > 0 ? `
+          <div class="card" style="background:#fff1f2; border:1px solid #fecdd3;">
+            <small style="color:red; font-weight:800;">PAST ARREARS DETECTED</small>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                <b style="color:red;">Rs. ${arrAmt}</b>
+                <button class="btn btn-dk" style="width:auto; padding:5px 12px; background:red;" onclick="settleArrears('${id}', ${arrAmt})">Settle All Now</button>
+            </div>
+          </div>` : ''}
           <button class="btn btn-dk" style="margin-top:10px; background:#f1f5f9; color:#000" onclick="closeOverlays()">Close</button>`;
         document.getElementById("p-overlay").style.display = "block";
       }
 
-      function settleArrears(id) {
-          const date = document.getElementById("att-date").value;
-          const month = date.slice(0, 7);
-          const key = `${cs}_${cg}_${date}`;
+      function settleArrears(sid, amt) {
+          const key = `${cs}_${cg}_${document.getElementById("att-date").value}`;
+          const month = key.split('_')[2].slice(0, 7);
+          if(!db.att[key].settlements) db.att[key].settlements = {};
           
-          // Identify all dates where student was present but didn't pay
-          Object.keys(db.att || {}).forEach(k => {
-              if(k.startsWith(`${cs}_${cg}_${month}`)) {
-                  if(db.att[k].p.includes(id) && !(db.att[k].daily?.[id] > 0)) {
-                      // We mark them as paid in their original slots WITHOUT changing the date
-                      if(!db.att[k].daily) db.att[k].daily = {};
-                      db.att[k].daily[id] = 250; 
+          let settledDates = [];
+          Object.keys(db.att).forEach(k => {
+              if(k.startsWith(`${cs}_${cg}_${month}`) && k !== key) {
+                  if(db.att[k].p.includes(sid) && !(db.att[k].daily?.[sid] > 0) && !db.fees?.[month]?.[sid]?.paid) {
+                      settledDates.push(k);
                   }
               }
           });
-          save(); render(); closeOverlays(); alert("All previous arrears marked as PAID.");
+          db.att[key].settlements[sid] = settledDates;
+          save(); render(); closeOverlays(); alert("Arrears Settled into today's collection!");
       }
 
       function payDaily(id, amt) {
@@ -250,10 +406,16 @@
         if(val) db.att[k].p.push(id); else db.att[k].p = db.att[k].p.filter(i => i !== id);
         save(); render();
       }
-      function register() { const nI = document.getElementById("reg-n"); const pI = document.getElementById("reg-ph"); const n = nI.value.trim(); const ph = pI.value.trim(); if(!n || !ph) return alert("Empty"); if(!db.students) db.students = []; db.students.push({ id: `S-${Date.now().toString().slice(-4)}`, name: n, ph, g: cg, s: cs, joined: new Date().toLocaleDateString() }); save(); alert("Enrolled"); nI.value = ""; pI.value = ""; setTab('att'); }
+      function register() {
+        const nI = document.getElementById("reg-n"); const pI = document.getElementById("reg-ph");
+        if(!nI.value || !pI.value) return;
+        if(!db.students) db.students = [];
+        db.students.push({ id: `S-${Date.now().toString().slice(-4)}`, name: nI.value, ph: pI.value, g: cg, s: cs, joined: new Date().toLocaleDateString() });
+        save(); nI.value = ""; pI.value = ""; setTab('att');
+      }
       function addNewGrade() { const n = prompt("Grade:"); const f = prompt("Fee:", "1000"); if(n) { if(!db.grades) db.grades = {}; db.grades[n] = { mFee: parseInt(f) }; save(); } }
-      function closeOverlays() { document.getElementById("p-overlay").style.display="none"; render(); }
-      function exportData() { const b = new Blob([JSON.stringify(db)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Backup.json`; a.click(); }
+      function closeOverlays() { document.getElementById("p-overlay").style.display="none"; document.getElementById("s-overlay").style.display="none"; render(); }
+      function exportData() { const b = new Blob([JSON.stringify(db)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Sipsayura_Backup.json`; a.click(); }
     </script>
   </body>
 </html>
