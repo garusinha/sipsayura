@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura Elite - V31 Financial Master</title>
+    <title>Sipsayura Elite - V32 Professional</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -41,7 +41,7 @@
       <div class="login-box">
         <span style="font-size: 50px;">🔐</span>
         <h1 style="margin:10px 0 5px;">Sipsayura Elite</h1>
-        <p style="font-size:10px; opacity:0.6; letter-spacing:2px; margin-bottom:30px;">V31 FINANCIAL SYSTEM</p>
+        <p style="font-size:10px; opacity:0.6; letter-spacing:2px; margin-bottom:30px;">SECURE ACCESS V32</p>
         <input type="password" id="master-pin" class="pin-input" placeholder="••••" maxlength="4">
         <button class="btn btn-p" onclick="checkLogin()">Unlock System</button>
       </div>
@@ -72,7 +72,6 @@
                 <button onclick="location.reload()" style="background:none; border:none; color:var(--p); font-weight:800;">Back</button>
             </div>
             <div id="dom-subs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"></div>
-            <button class="btn btn-p" style="margin-top:20px" onclick="addNewSubject()">+ Add Subject</button>
           </div>
 
           <div id="v-dash" style="display: none">
@@ -82,7 +81,7 @@
                 <input type="text" id="att-q" placeholder="Search student name..." oninput="render()" style="margin-bottom:0" />
               </div>
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
-                <button class="btn btn-dk" onclick="openSummary()">📊 Professional Summary</button>
+                <button class="btn btn-dk" onclick="openSummary()">📊 Pro Summary</button>
                 <button class="btn btn-s" onclick="save()">✔️ Cloud Sync</button>
               </div>
               <div id="dom-list"></div>
@@ -90,16 +89,16 @@
 
             <div id="tab-reg" style="display: none">
               <div class="card">
-                <h3>Student Enrollment</h3>
+                <h3>Enroll Student</h3>
                 <input type="text" id="reg-n" placeholder="Full Name" />
                 <input type="tel" id="reg-ph" placeholder="Parent WhatsApp (07XXXXXXXX)" maxlength="10"/>
-                <button class="btn btn-p" onclick="register()">Enroll Student</button>
+                <button class="btn btn-p" id="enroll-btn" onclick="register()">Confirm Enrollment</button>
               </div>
             </div>
 
             <div id="tab-set" style="display: none">
-              <div class="card"><h3>System Admin</h3><p>Manage database and configurations.</p></div>
-              <button class="btn btn-s" style="margin-bottom:10px" onclick="exportData()">Backup Data</button>
+              <div class="card"><h3>Admin Controls</h3></div>
+              <button class="btn btn-s" style="margin-bottom:10px" onclick="exportData()">Backup Database</button>
               <button class="btn btn-dk" onclick="location.reload()">Logout</button>
             </div>
           </div>
@@ -124,7 +123,7 @@
             document.getElementById("login-screen").style.display = "none";
             document.getElementById("app-content").style.display = "block";
             initApp();
-        } else { alert("Incorrect PIN"); }
+        } else { alert("Invalid Access PIN"); }
       }
       if(sessionStorage.getItem("auth_sip") === "true") {
         document.getElementById("login-screen").style.display = "none";
@@ -189,11 +188,21 @@
           const key = `${cs}_${cg}_${date}`;
           const isP = db.att?.[key]?.p?.includes(s.id);
           const isPaid = db.fees?.[month]?.[s.id]?.paid;
-          dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')" style="flex:1"><b>${s.name}</b><br><span class="badge ${isPaid ? 'badge-paid' : 'badge-due'}">${isPaid ? 'Monthly Done' : 'Pending'}</span></div><input type="checkbox" style="width:22px; height:22px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
+          dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')" style="flex:1"><b>${s.name}</b><br><span class="badge ${isPaid ? 'badge-paid' : 'badge-due'}">${isPaid ? 'MONTHLY SETTLED' : 'PENDING'}</span></div><input type="checkbox" style="width:22px; height:22px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
         });
       }
 
-      // FINANCIAL LOGIC: DEBT & PROFILE
+      // ENROLLMENT REPAIR
+      function register() {
+        const n = document.getElementById("reg-n").value.trim();
+        const ph = document.getElementById("reg-ph").value.trim();
+        if(!n || !ph) return alert("Fill Name and Phone");
+        if(!db.students) db.students = [];
+        db.students.push({ id: `S-${Math.floor(1000+Math.random()*9000)}`, name: n, ph, g: cg, s: cs, joined: new Date().toLocaleDateString() });
+        save(); alert("Enrolled!"); setTab('att');
+      }
+
+      // PROFILE WITH AUTO DAILY PAY & HISTORY
       function openProfile(id) {
         const s = db.students.find(x => x.id === id);
         const date = document.getElementById("att-date").value;
@@ -201,12 +210,15 @@
         const isPaidMonth = db.fees?.[month]?.[id]?.paid;
         const mFee = db.grades[cg].mFee;
 
+        let historyHTML = "";
+        Object.keys(db.fees || {}).forEach(m => {
+          if(db.fees[m][id]?.paid) historyHTML += `<div style="display:flex; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom:1px solid #f1f5f9;"><span>${m}</span><span style="color:#10b981; font-weight:700;">PAID</span></div>`;
+        });
+
         let unpaidDays = 0;
         Object.keys(db.att || {}).forEach(k => {
           if(k.startsWith(`${cs}_${cg}_${month}`)) {
-             const wasP = db.att[k].p.includes(id);
-             const dayP = db.att[k].daily?.[id] > 0;
-             if(wasP && !dayP && !isPaidMonth) unpaidDays++;
+             if(db.att[k].p.includes(id) && !(db.att[k].daily?.[id] > 0) && !isPaidMonth) unpaidDays++;
           }
         });
         const debt = unpaidDays * 250;
@@ -220,141 +232,93 @@
               <p style="font-size:10px; font-weight:800; color:${isPaidMonth ? '#166534' : '#4f46e5'}; margin:0 0 5px 0;">MONTHLY STATUS</p>
               <div style="display:flex; justify-content:space-between; align-items:center;">
                   <span style="font-weight:700;">${isPaidMonth ? '✅ PAID' : 'PENDING'}</span>
-                  <button class="btn btn-p" style="width:auto; padding:5px 10px;" onclick="payMonthly('${id}', ${!isPaidMonth})">
-                      ${isPaidMonth ? 'Undo' : 'Pay Rs.' + mFee}
-                  </button>
+                  <button class="btn btn-p" style="width:auto; padding:5px 10px;" onclick="payMonthly('${id}', ${!isPaidMonth})">${isPaidMonth ? 'Undo' : 'Pay Rs.' + mFee}</button>
               </div>
           </div>
           ${!isPaidMonth ? `
           <div class="card" style="border-left:4px solid #f43f5e;">
-              <p style="font-size:10px; font-weight:800; color:#f43f5e; margin:0 0 5px 0;">DAILY PAYMENT (DEBT)</p>
+              <p style="font-size:10px; font-weight:800; color:#f43f5e; margin:0 0 5px 0;">DAILY PAYMENT (AUTO-RS.250)</p>
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span>Due: <b style="color:#e11d48">Rs. ${debt}</b></span>
-                  <div style="display:flex; gap:5px;">
-                      <input type="number" id="df-input" placeholder="Amt" style="width:80px; margin:0; padding:5px;">
-                      <button class="btn btn-dk" style="width:auto; padding:5px 10px;" onclick="payDaily('${id}')">Pay</button>
-                  </div>
+                  <span>Total Due: <b style="color:#e11d48">Rs. ${debt}</b></span>
+                  <button class="btn btn-dk" style="width:auto; padding:5px 12px;" onclick="payDaily('${id}', 250)">Pay Today</button>
               </div>
-              <p style="font-size:9px; color:#94a3b8; margin-top:5px;">*Arrears for ${unpaidDays} classes.</p>
           </div>` : ''}
+          <div style="margin-top:15px;">
+              <p style="font-size:10px; font-weight:800; color:#64748b; margin-bottom:8px;">MONTHLY HISTORY</p>
+              <div style="max-height:80px; overflow-y:auto; background:#f8fafc; padding:8px; border-radius:10px; border:1px solid #f1f5f9;">${historyHTML || 'No history'}</div>
+          </div>
           <div style="margin-top:20px;">
-              <button class="btn btn-dk" style="background:#25d366; margin-bottom:10px;" onclick="sendReceipt('${s.name}', '${s.ph}', '${isPaidMonth?'Monthly':'Daily'}', ${isPaidMonth?mFee:debt})">📱 WhatsApp Receipt</button>
+              <button class="btn btn-dk" style="background:#25d366; margin-bottom:10px;" onclick="sendReceipt('${s.name}', '${s.ph}', '${isPaidMonth?'Monthly':'Daily'}', ${isPaidMonth?mFee:250})">📱 WhatsApp Slip</button>
               <button class="btn btn-dk" style="background:#f1f5f9; color:#64748b;" onclick="closeOverlays()">Close</button>
           </div>
-          <div style="margin-top:30px; text-align:center;">
-              <button onclick="deleteStudent('${id}')" style="background:none; border:none; color:#cbd5e1; font-size:10px; text-decoration:underline;">Remove Student</button>
-          </div>`;
+          <div style="margin-top:20px; text-align:center;"><button onclick="deleteStudent('${id}')" style="background:none; border:none; color:#cbd5e1; font-size:10px; text-decoration:underline;">Delete Student</button></div>`;
         document.getElementById("p-overlay").style.display = "block";
       }
 
-      // TEACHER SUMMARY DESIGN
+      function payDaily(id, amt) {
+        const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
+        if(!db.att[k]) db.att[k] = { p: [] }; if(!db.att[k].daily) db.att[k].daily = {};
+        db.att[k].daily[id] = amt; save(); alert("Daily Paid"); openProfile(id);
+      }
+
       function openSummary() {
         const date = document.getElementById("att-date").value;
         const key = `${cs}_${cg}_${date}`;
         const attData = db.att?.[key] || { p: [], daily: {} };
-        const month = date.slice(0, 7);
         const mFee = db.grades[cg].mFee;
         let mTotal = 0, dTotal = 0;
 
-        let html = `
-          <div style="font-family:sans-serif;">
-              <div style="text-align:center; margin-bottom:15px; border-bottom:2px solid #0f172a; padding-bottom:10px;">
-                  <h2 style="margin:0;">TEACHER MASTER SHEET</h2>
-                  <small>${cs} | GRADE ${cg} | ${date}</small>
-              </div>
-              <table style="width:100%; border-collapse:collapse;">
-                  <tr style="background:#f1f5f9; font-size:11px;">
-                      <th style="padding:10px; text-align:left;">STUDENT</th>
-                      <th style="padding:10px; text-align:center;">TYPE</th>
-                      <th style="padding:10px; text-align:right;">COLLECTED</th>
-                  </tr>`;
-
+        let html = `<div style="font-family:sans-serif;"><div style="text-align:center; margin-bottom:15px; border-bottom:2px solid #0f172a; padding-bottom:10px;"><h2 style="margin:0;">TEACHER MASTER SHEET</h2><small>${cs} | GRADE ${cg} | ${date}</small></div><table id="sum-table" style="width:100%; border-collapse:collapse;"><tr style="background:#f1f5f9; font-size:11px;"><th style="padding:10px; text-align:left;">STUDENT</th><th style="padding:10px; text-align:center;">TYPE</th><th style="padding:10px; text-align:right;">AMOUNT</th></tr>`;
         (db.students || []).filter(s => s.g === cg && s.s === cs).forEach(s => {
-            const isPaidMonth = db.fees?.[month]?.[s.id]?.date === date;
+            const isPaidMonth = db.fees?.[date.slice(0, 7)]?.[s.id]?.date === date;
             const dayAmt = attData.daily?.[s.id] || 0;
             const amt = isPaidMonth ? mFee : dayAmt;
             if(amt > 0) {
-                mTotal += (isPaidMonth ? mFee : 0);
-                dTotal += (isPaidMonth ? 0 : dayAmt);
-                html += `<tr style="border-bottom:1px solid #eee; font-size:12px;">
-                    <td style="padding:10px;"><b>${s.name.toUpperCase()}</b></td>
-                    <td style="padding:10px; text-align:center;"><small>${isPaidMonth ? 'MONTH' : 'DAILY'}</small></td>
-                    <td style="padding:10px; text-align:right;">Rs. ${amt}</td>
-                </tr>`;
+                mTotal += (isPaidMonth ? mFee : 0); dTotal += (isPaidMonth ? 0 : dayAmt);
+                html += `<tr style="border-bottom:1px solid #eee; font-size:12px;"><td style="padding:10px;"><b>${s.name.toUpperCase()}</b></td><td style="padding:10px; text-align:center;">${isPaidMonth ? 'MONTH' : 'DAILY'}</td><td style="padding:10px; text-align:right;">Rs. ${amt}</td></tr>`;
             }
         });
-
-        const total = mTotal + dTotal;
-        const inst = total * 0.20;
-        const teacher = total - inst;
-
+        const total = mTotal + dTotal; const inst = total * 0.20; const teacher = total - inst;
         html += `</table></div>`;
         document.getElementById("sum-area").innerHTML = html;
-        document.getElementById("sum-fin").innerHTML = `
-          <div style="margin-top:20px; background:#0f172a; color:white; padding:20px; border-radius:15px;">
-              <div style="display:flex; justify-content:space-between; margin-bottom:10px; opacity:0.8;"><span>Gross:</span><span>Rs. ${total}</span></div>
-              <div style="display:flex; justify-content:space-between; margin-bottom:15px; color:#f43f5e;"><span>Institute (20%):</span><span>- Rs. ${inst.toFixed(0)}</span></div>
-              <div style="display:flex; justify-content:space-between; border-top:1px solid #334155; padding-top:15px;">
-                  <span style="font-weight:800;">TEACHER NET:</span><span style="font-weight:800; color:#10b981;">Rs. ${teacher.toFixed(0)}</span>
-              </div>
-          </div>`;
+        document.getElementById("sum-fin").innerHTML = `<div style="margin-top:20px; background:#0f172a; color:white; padding:20px; border-radius:15px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px; opacity:0.8;"><span>Gross Collection:</span><span>Rs. ${total}</span></div><div style="display:flex; justify-content:space-between; margin-bottom:15px; color:#f43f5e;"><span>Institute Fee (20%):</span><span>- Rs. ${inst.toFixed(0)}</span></div><div style="display:flex; justify-content:space-between; border-top:1px solid #334155; padding-top:15px;"><span style="font-weight:800; font-size:16px;">TEACHER NET:</span><span style="font-weight:800; font-size:20px; color:#10b981;">Rs. ${teacher.toFixed(0)}</span></div></div>`;
         document.getElementById("s-overlay").style.display = "block";
       }
 
+      function printReport() {
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        const date = document.getElementById("att-date").value;
+        doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.text("SIPSAYURA ELITE REPORT", 105, 18, null, null, "center");
+        doc.setFontSize(10); doc.text(`SUBJECT: ${cs} | GRADE: ${cg} | DATE: ${date}`, 105, 28, null, null, "center");
+        doc.autoTable({ html: '#sum-table', startY: 45, theme: 'grid', headStyles: { fillColor: [15, 23, 42] } });
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFillColor(248, 250, 252); doc.rect(120, finalY, 75, 40, 'F');
+        doc.setTextColor(15, 23, 42); doc.text(document.getElementById("sum-fin").innerText, 125, finalY + 10);
+        doc.save(`Sipsayura_Report_${date}.pdf`);
+      }
+
+      // SHARED LOGIC
       function payMonthly(id, st) {
         const m = document.getElementById("att-date").value.slice(0, 7);
         if(!db.fees) db.fees = {}; if(!db.fees[m]) db.fees[m] = {};
         db.fees[m][id] = { paid: st, date: document.getElementById("att-date").value };
         save(); openProfile(id);
       }
-
-      function payDaily(id) {
-        const v = parseInt(document.getElementById("df-input").value) || 0;
-        const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
-        if(!db.att[k]) db.att[k] = { p: [] }; if(!db.att[k].daily) db.att[k].daily = {};
-        db.att[k].daily[id] = v; save(); alert("Paid Rs." + v); openProfile(id);
-      }
-
       function markAtt(id, val) {
         const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
         if(!db.att[k]) db.att[k] = { p: [] };
         if(val) db.att[k].p.push(id); else db.att[k].p = db.att[k].p.filter(i => i !== id);
         save();
       }
-
-      function deleteStudent(id) {
-        if(confirm("Confirm: Permanently delete this student?")) {
-            db.students = db.students.filter(x => x.id !== id);
-            save(); closeOverlays();
-        }
-      }
-
+      function deleteStudent(id) { if(confirm("Confirm deletion?")) { db.students = db.students.filter(x => x.id !== id); save(); closeOverlays(); } }
       function sendReceipt(n, ph, t, a) {
-        const msg = `*OFFICIAL RECEIPT*%0A*${n.toUpperCase()}*%0A*Type:* ${t} Fee%0A*Amount:* Rs.${a}.00%0A*Status:* SETTLED ✅%0A_Thank you - Sipsayura_`;
+        const msg = `*OFFICIAL SLIP*%0A*${n.toUpperCase()}*%0A*Fee:* ${t}%0A*Amount:* Rs.${a}.00%0A*Status:* PAID ✅`;
         window.open(`https://wa.me/94${ph.substring(1)}?text=${msg}`);
       }
-
-      function register() {
-        const n = document.getElementById("reg-n").value.trim(); const ph = document.getElementById("reg-ph").value.trim();
-        if(!n || !ph) return alert("Fill all");
-        db.students.push({ id: `S-${Math.floor(100+Math.random()*900)}`, name: n, ph, g: cg, s: cs, joined: new Date().toLocaleDateString() });
-        save(); setTab('att');
-      }
-
       function addNewGrade() { const n = prompt("Grade:"); const f = prompt("Fee:", "1000"); if(n) { if(!db.grades) db.grades = {}; db.grades[n] = { mFee: parseInt(f) }; save(); } }
-      function addNewSubject() { const n = prompt("Subject:"); if(n) { if(!db.subs) db.subs=[]; db.subs.push(n.toUpperCase()); save(); } }
-      function printReport() {
-        const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.text("SIPSAYURA CLASS REPORT", 105, 20, null, null, "center");
-        doc.autoTable({ html: '#sum-area table', startY: 30 });
-        doc.text(document.getElementById("sum-fin").innerText, 14, doc.lastAutoTable.finalY + 15);
-        doc.save(`Report_${document.getElementById("att-date").value}.pdf`);
-      }
       function closeOverlays() { document.getElementById("p-overlay").style.display="none"; document.getElementById("s-overlay").style.display="none"; render(); }
-      function exportData() {
-        const b = new Blob([JSON.stringify(db)], {type: "application/json"});
-        const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Backup.json`; a.click();
-      }
+      function exportData() { const b = new Blob([JSON.stringify(db)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Backup.json`; a.click(); }
     </script>
   </body>
 </html>
