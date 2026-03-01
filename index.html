@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura Elite - V36 Master</title>
+    <title>Sipsayura Elite - V37 Master</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -41,7 +41,7 @@
       <div class="login-box" style="max-width:320px; width:100%;">
         <span style="font-size: 50px;">🔐</span>
         <h1 style="margin:10px 0 5px; color:white;">Sipsayura Elite</h1>
-        <p style="font-size:10px; opacity:0.6; color:white;">V36 MASTER SCHEDULER</p>
+        <p style="font-size:10px; opacity:0.6; color:white;">V37 SCHEDULE & ARREARS</p>
         <input type="password" id="master-pin" style="background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.2); color:white; text-align:center; font-size:24px; letter-spacing:10px;" placeholder="••••" maxlength="4">
         <button class="btn btn-p" onclick="checkLogin()">Unlock System</button>
       </div>
@@ -76,6 +76,7 @@
                 <input type="date" id="att-date" onchange="render()" />
                 <input type="text" id="att-q" placeholder="Search student name..." oninput="render()" style="margin-bottom:0" />
               </div>
+              <div id="sch-notice" style="margin-bottom:10px; font-size:11px; color:var(--p); font-weight:bold;"></div>
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
                 <button class="btn btn-dk" onclick="openSummary()">📊 Pro Summary</button>
                 <button class="btn btn-s" onclick="save()">✔️ Cloud Sync</button>
@@ -93,17 +94,17 @@
             </div>
 
             <div id="tab-set" style="display: none">
-              <div class="card"><h3>Subject Schedule</h3>
+              <div class="card"><h3>Class Schedule</h3>
                 <div class="sch-box">
-                    <label style="font-size:10px; font-weight:800;">DAY</label>
+                    <label style="font-size:10px; font-weight:800;">RECURRING DAY</label>
                     <select id="sch-day">
-                        <option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+                        <option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option><option value="Friday">Friday</option><option value="Saturday">Saturday</option><option value="Sunday">Sunday</option>
                     </select>
                     <div style="display:flex; gap:10px;">
                         <div style="flex:1"><label style="font-size:10px; font-weight:800;">TIME</label><input type="time" id="sch-time"></div>
-                        <div style="flex:1"><label style="font-size:10px; font-weight:800;">HRS</label><input type="number" id="sch-dur" placeholder="2"></div>
+                        <div style="flex:1"><label style="font-size:10px; font-weight:800;">HRS</label><input type="number" id="sch-dur"></div>
                     </div>
-                    <button class="btn btn-p" onclick="updateSchedule()">Save Schedule</button>
+                    <button class="btn btn-p" onclick="updateSchedule()">Save & Lock Schedule</button>
                 </div>
               </div>
               <div class="card"><h3>Monthly Ledger</h3>
@@ -211,24 +212,57 @@
       }
 
       function render() {
-        const date = document.getElementById("att-date").value || new Date().toISOString().split('T')[0];
-        document.getElementById("att-date").value = date;
+        const dateInput = document.getElementById("att-date").value || new Date().toISOString().split('T')[0];
+        document.getElementById("att-date").value = dateInput;
+        
+        // SCHEDULE LOGIC: Determine day name of selected date
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const selectedDayName = days[new Date(dateInput).getDay()];
+        const sch = db.schedules?.[`${cs}_${cg}`] || {};
+        
         const q = document.getElementById("att-q").value.toLowerCase();
-        const month = date.slice(0, 7);
-        const list = (db.students || []).filter(s => s.g === cg && s.s === cs && s.name.toLowerCase().includes(q));
+        const month = dateInput.slice(0, 7);
         const dom = document.getElementById("dom-list"); dom.innerHTML = "";
+
+        // Only show students if the date matches the scheduled day
+        if(sch.day !== selectedDayName) {
+            document.getElementById("sch-notice").innerText = `⚠️ Selected date is ${selectedDayName}. Class is scheduled for ${sch.day}. List Hidden.`;
+            return;
+        } else {
+            document.getElementById("sch-notice").innerText = `✅ Scheduled Class: ${sch.time} (${sch.dur} hrs)`;
+        }
+
+        const list = (db.students || []).filter(s => s.g === cg && s.s === cs && s.name.toLowerCase().includes(q));
         
         list.forEach(s => {
-          const key = `${cs}_${cg}_${date}`;
+          const key = `${cs}_${cg}_${dateInput}`;
           const isP = db.att?.[key]?.p?.includes(s.id);
           const isPaidMonth = db.fees?.[month]?.[s.id]?.paid;
-          const isPaidDay = db.att?.[key]?.daily?.[s.id] > 0;
+          const isPaidDayToday = db.att?.[key]?.daily?.[s.id] > 0;
           
+          // ARREARS LOGIC: Check previous dates in the month
+          let hasArrears = false;
+          Object.keys(db.att || {}).forEach(k => {
+              if(k.startsWith(`${cs}_${cg}_${month}`) && k !== key) {
+                  const wasPresent = db.att[k].p.includes(s.id);
+                  const paidDaily = db.att[k].daily?.[s.id] > 0;
+                  if(wasPresent && !paidDaily && !isPaidMonth) hasArrears = true;
+              }
+          });
+
           let statusLabel = `<span class="badge badge-due">PENDING</span>`;
           if(isPaidMonth) statusLabel = `<span class="badge badge-paid">MONTHLY DONE</span>`;
-          else if(isPaidDay) statusLabel = `<span class="badge badge-day">TODAY PAID</span>`;
+          else if(isPaidDayToday) statusLabel = `<span class="badge badge-day">TODAY PAID</span>`;
 
-          dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')" style="flex:1"><b>${s.name}</b><br>${statusLabel}</div><input type="checkbox" style="width:22px; height:22px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
+          dom.innerHTML += `
+            <div class="std-row">
+                <div onclick="openProfile('${s.id}')" style="flex:1">
+                    <b style="color: ${hasArrears ? 'var(--d)' : 'var(--dk)'}">${s.name.toUpperCase()}</b>
+                    ${hasArrears ? '<br><small style="color:red; font-weight:800;">!!! UNSETTLED ARREARS !!!</small>' : ''}
+                    <br>${statusLabel}
+                </div>
+                <input type="checkbox" style="width:22px; height:22px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)">
+            </div>`;
         });
       }
 
@@ -241,7 +275,6 @@
         let mTotal = 0, dTotal = 0;
 
         let html = `<div id="pdf-content"><div style="text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:15px;"><h2 style="margin:0">SIPSAYURA ELITE - TEACHER SHEET</h2><p>${cs} | GRADE ${cg} | ${date} | Time: ${sch.time} (${sch.dur}h)</p></div>`;
-        
         html += `<table id="sum-table" style="width:100%; border-collapse:collapse; margin-bottom:20px;"><tr style="background:#eee;"><th>STUDENT</th><th>TYPE</th><th style="text-align:right">AMOUNT</th></tr>`;
         let pendingHtml = `<p style="color:red; font-weight:bold;">PENDING PAYMENTS (PRESENT)</p><table id="pending-table" style="width:100%; border-collapse:collapse;"><tr style="background:#fee;"><th>STUDENT</th><th style="text-align:right">STATUS</th></tr>`;
         
@@ -286,40 +319,20 @@
           if(!month) return alert("Select Month");
           const { jsPDF } = window.jspdf; const doc = new jsPDF();
           doc.setFontSize(16); doc.text(`MONTHLY COLLECTION LEDGER: ${month}`, 14, 15);
-          doc.setFontSize(10); doc.text(`Class: ${cs} Grade ${cg}`, 14, 22);
-
           let data = []; let grandTotal = 0;
-          // Sort keys to get day by day
           const sortedDates = Object.keys(db.att).filter(k => k.startsWith(`${cs}_${cg}_${month}`)).sort();
-
           sortedDates.forEach(k => {
               const dayDate = k.split('_')[2];
               let daySum = 0;
-              // Monthly payers who paid ON this specific day
-              (db.students || []).forEach(s => {
-                  if(db.fees?.[month]?.[s.id]?.date === dayDate) daySum += db.grades[cg].mFee;
-              });
-              // Daily payers
+              (db.students || []).forEach(s => { if(db.fees?.[month]?.[s.id]?.date === dayDate) daySum += db.grades[cg].mFee; });
               const dailyPayers = db.att[k].daily || {};
               Object.values(dailyPayers).forEach(v => daySum += v);
-              
-              if(daySum > 0) {
-                  data.push([dayDate, `Rs. ${daySum.toLocaleString()}`]);
-                  grandTotal += daySum;
-              }
+              if(daySum > 0) { data.push([dayDate, `Rs. ${daySum.toLocaleString()}`]); grandTotal += daySum; }
           });
-
-          doc.autoTable({
-              head: [['Date', 'Collection']],
-              body: data,
-              startY: 30,
-              foot: [['GRAND TOTAL', `Rs. ${grandTotal.toLocaleString()}`]],
-              headStyles: {fillColor:[15, 23, 42]}
-          });
+          doc.autoTable({ head: [['Date', 'Collection']], body: data, startY: 30, foot: [['GRAND TOTAL', `Rs. ${grandTotal.toLocaleString()}`]], headStyles: {fillColor:[15, 23, 42]} });
           doc.save(`Monthly_Ledger_${cs}_${month}.pdf`);
       }
 
-      // SHARED CORE FUNCTIONS
       function register() {
         const nI = document.getElementById("reg-n"); const pI = document.getElementById("reg-ph");
         const n = nI.value.trim(); const ph = pI.value.trim();
@@ -335,18 +348,20 @@
         const month = date.slice(0, 7);
         const key = `${cs}_${cg}_${date}`;
         const isPaidMonth = db.fees?.[month]?.[id]?.paid;
-        const isPaidDay = db.att?.[key]?.daily?.[id] > 0;
+        const isPaidDayToday = db.att?.[key]?.daily?.[id] > 0;
         const mFee = db.grades[cg].mFee;
 
-        let tCls = 0, pDay = 0;
-        Object.keys(db.att || {}).forEach(k => { if(k.startsWith(`${cs}_${cg}_${month}`)) { tCls++; if(db.att[k].p.includes(id)) pDay++; } });
-        
+        let unpaidDays = 0;
+        Object.keys(db.att || {}).forEach(k => {
+          if(k.startsWith(`${cs}_${cg}_${month}`)) {
+            if(db.att[k].p.includes(id) && !(db.att[k].daily?.[id] > 0) && !isPaidMonth) unpaidDays++;
+          }
+        });
+        const arrearsTotal = unpaidDays * 250;
+
         document.getElementById("p-content").innerHTML = `
           <h3 style="margin:0">${s.name.toUpperCase()}</h3>
-          <div style="display:flex; gap:10px; margin:15px 0;">
-            <div class="card" style="flex:1; margin:0; text-align:center;"><small>PRESENT</small><br><b>${pDay}/${tCls}</b></div>
-            <div class="card" style="flex:1; margin:0; text-align:center;"><small>ATTEND %</small><br><b>${tCls>0?((pDay/tCls)*100).toFixed(0):0}%</b></div>
-          </div>
+          <p style="font-size:10px; color:#64748b;">${cs} - Grade ${cg}</p>
           <div class="card" style="background:${isPaidMonth?'#f0fdf4':'#fff'}">
             <small>MONTHLY PLAN</small>
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -354,41 +369,42 @@
                 <button class="btn btn-p" style="width:auto; padding:5px 10px;" onclick="payMonthly('${id}', ${!isPaidMonth})">${isPaidMonth?'Undo':'Pay '+mFee}</button>
             </div>
           </div>
-          ${!isPaidMonth ? `<div class="card" style="border-left:4px solid ${isPaidDay? 'var(--y)':'var(--d)'}">
-            <small>DAILY PAYMENT</small>
+          ${!isPaidMonth ? `<div class="card" style="border-left:4px solid ${isPaidDayToday? 'var(--y)':'var(--d)'}">
+            <small>DAILY / ARREARS PAYMENT</small>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <b style="color:${isPaidDay? 'var(--y)':'var(--d)'}">${isPaidDay?'PAID TODAY':'NOT PAID'}</b>
-                ${!isPaidDay? `<button class="btn btn-dk" style="width:auto; padding:5px 12px;" onclick="payDaily('${id}', 250)">Pay 250</button>`:''}
+                <div>
+                   <b style="color:${isPaidDayToday? 'var(--y)':'var(--d)'}">${isPaidDayToday?'PAID TODAY':'NOT PAID TODAY'}</b><br>
+                   <small>Total Arrears: Rs.${arrearsTotal}</small>
+                </div>
+                ${!isPaidDayToday? `<button class="btn btn-dk" style="width:auto; padding:5px 12px;" onclick="payDaily('${id}', 250)">Pay 250</button>`:''}
             </div>
           </div>` : ''}
-          <button class="btn btn-p" style="background:#25d366" onclick="sendAdvancedReceipt('${s.name}', '${s.ph}', '${isPaidMonth?'Monthly':'Daily'}', ${isPaidMonth?mFee:250})">WhatsApp Receipt</button>
-          <button class="btn btn-dk" style="margin-top:10px; background:#f1f5f9; color:#000" onclick="closeOverlays()">Close</button>
-          <div style="margin-top:20px; text-align:center;"><button onclick="deleteStudent('${id}')" style="color:red; background:none; border:none; font-size:10px;">Delete Student</button></div>`;
+          <button class="btn btn-p" style="background:#25d366" onclick="sendAdvancedReceipt('${s.name}', '${s.ph}', '${isPaidMonth?'Monthly':'Daily'}', ${isPaidDayToday?250:arrearsTotal})">WhatsApp Receipt</button>
+          <button class="btn btn-dk" style="margin-top:10px; background:#f1f5f9; color:#000" onclick="closeOverlays()">Close</button>`;
         document.getElementById("p-overlay").style.display = "block";
       }
 
       function payDaily(id, amt) {
         const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
         if(!db.att[k]) db.att[k] = { p: [] }; if(!db.att[k].daily) db.att[k].daily = {};
-        db.att[k].daily[id] = amt; save(); openProfile(id);
+        db.att[k].daily[id] = amt; save(); render(); openProfile(id);
       }
       function payMonthly(id, st) {
         const m = document.getElementById("att-date").value.slice(0, 7);
         if(!db.fees) db.fees = {}; if(!db.fees[m]) db.fees[m] = {};
         db.fees[m][id] = { paid: st, date: document.getElementById("att-date").value };
-        save(); openProfile(id);
+        save(); render(); openProfile(id);
       }
       function markAtt(id, val) {
         const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
         if(!db.att[k]) db.att[k] = { p: [] };
         if(val) db.att[k].p.push(id); else db.att[k].p = db.att[k].p.filter(i => i !== id);
-        save();
+        save(); render();
       }
       function sendAdvancedReceipt(n, ph, type, amt) {
         const msg = `*SIPSAYURA ELITE*%0A*OFFICIAL RECEIPT*%0A*STUDENT:* ${n.toUpperCase()}%0A*CLASS:* ${cs} G${cg}%0A*DATE:* ${document.getElementById("att-date").value}%0A*AMOUNT:* Rs. ${amt}.00%0A*PLAN:* ${type}%0A*STATUS:* PAID ✅`;
         window.open(`https://wa.me/94${ph.substring(1)}?text=${msg}`);
       }
-      function deleteStudent(id) { if(confirm("Delete?")) { db.students = db.students.filter(x => x.id !== id); save(); closeOverlays(); } }
       function addNewGrade() { const n = prompt("Grade:"); const f = prompt("Fee:", "1000"); if(n) { if(!db.grades) db.grades = {}; db.grades[n] = { mFee: parseInt(f) }; save(); } }
       function closeOverlays() { document.getElementById("p-overlay").style.display="none"; document.getElementById("s-overlay").style.display="none"; render(); }
       function exportData() { const b = new Blob([JSON.stringify(db)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Sipsayura_Backup.json`; a.click(); }
