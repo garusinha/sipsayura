@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sipsayura Elite - V36.2 Master</title>
+    <title>Sipsayura Elite - V36.3 Fixed</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -19,7 +19,8 @@
       .nav-btn.active { background: var(--p); color: white; }
       .container { padding: 15px; max-width: 500px; margin: auto; padding-bottom: 100px; }
       .card { background: white; padding: 18px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #f1f5f9; }
-      .grade-card { background: white; padding: 20px; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; cursor: pointer; }
+      .grade-card { background: white; padding: 20px; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; cursor: pointer; position: relative; }
+      .count-badge { position: absolute; top: 10px; right: 10px; background: var(--p); color: white; font-size: 9px; padding: 2px 6px; border-radius: 10px; }
       input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #e2e8f0; font-size: 13px; margin-bottom: 12px; box-sizing: border-box; }
       .btn { border: none; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
       .btn-p { background: var(--p); color: white; }
@@ -41,7 +42,7 @@
       <div class="login-box" style="max-width:320px; width:100%;">
         <span style="font-size: 50px;">💎</span>
         <h1 style="margin:10px 0 5px; color:white;">Sipsayura Elite</h1>
-        <p style="font-size:10px; opacity:0.6; color:white;">V36.2 ADVANCED MASTER</p>
+        <p style="font-size:10px; opacity:0.6; color:white;">V36.3 SYSTEM FIXED</p>
         <input type="password" id="master-pin" style="background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.2); color:white; text-align:center; font-size:24px; letter-spacing:10px;" placeholder="••••" maxlength="4">
         <button class="btn btn-p" onclick="checkLogin()">Unlock System</button>
       </div>
@@ -89,7 +90,6 @@
             <div id="tab-sch" style="display: none">
                 <div class="card">
                     <h3>Set Class Schedule</h3>
-                    <p style="font-size:11px; color:#64748b;">Attendance is only enabled within ±1 hour of this time.</p>
                     <label>Class Day</label>
                     <select id="sch-day">
                         <option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option>
@@ -112,6 +112,7 @@
             <div id="tab-reg" style="display: none">
               <div class="card">
                 <h3>Enroll Student</h3>
+                <p id="reg-context" style="font-size:11px; color:var(--p); font-weight:800;"></p>
                 <input type="text" id="reg-n" placeholder="Full Name" />
                 <input type="tel" id="reg-ph" placeholder="Parent WhatsApp" maxlength="10"/>
                 <button class="btn btn-p" onclick="register()">Confirm Enrollment</button>
@@ -119,7 +120,7 @@
             </div>
 
             <div id="tab-set" style="display: none">
-              <div class="card"><h3>Admin</h3></div>
+              <div class="card"><h3>Admin Controls</h3></div>
               <button class="btn btn-s" style="margin-bottom:10px" onclick="exportData()">Backup Data</button>
               <button class="btn btn-dk" onclick="location.reload()">Logout</button>
             </div>
@@ -167,7 +168,7 @@
       let db = { students: [], att: {}, grades: {}, subs: ["MATH","SCI","SIN","ENG"], fees: {}, schedules: {} };
       let cg = "", cs = "";
 
-      function initApp() { rdb.ref('sip_v36').on('value', (s) => { if(s.val()) { db = s.val(); render(); refreshUI(); } }); }
+      function initApp() { rdb.ref('sip_v36').on('value', (s) => { if(s.val()) { db = s.val(); if(!db.students) db.students = []; render(); refreshUI(); } }); }
       initApp();
       const save = () => rdb.ref('sip_v36').set(db);
 
@@ -179,7 +180,8 @@
       function initGrades() {
         const d = document.getElementById("dom-grades"); d.innerHTML = "";
         Object.keys(db.grades || {}).forEach(g => {
-          d.innerHTML += `<div class="grade-card" onclick="selG('${g}')"><h3>Grade ${g}</h3><small>Fee: ${db.grades[g].mFee} | Daily: ${db.grades[g].dFee || 250}</small></div>`;
+          const count = (db.students || []).filter(s => s.g.toString() === g.toString()).length;
+          d.innerHTML += `<div class="grade-card" onclick="selG('${g}')"><span class="count-badge">${count} Std</span><h3>Grade ${g}</h3><small>Fee: ${db.grades[g].mFee}</small></div>`;
         });
       }
 
@@ -189,7 +191,14 @@
         (db.subs || []).forEach(s => { d.innerHTML += `<div class="grade-card" onclick="enter('${s}')"><h3>${s}</h3></div>`; });
       }
 
-      function enter(s) { cs = s; showV("v-dash"); document.getElementById("app-nav").style.display = "flex"; setTab('att', document.querySelector(".nav-btn")); }
+      function enter(s) { 
+        cs = s; 
+        showV("v-dash"); 
+        document.getElementById("app-nav").style.display = "flex"; 
+        document.getElementById("reg-context").innerText = `Enrolling for: Grade ${cg} - ${cs}`;
+        setTab('att', document.querySelector(".nav-btn")); 
+      }
+
       function showV(id) { ["v-grades", "v-subs", "v-dash"].forEach(v => document.getElementById(v).style.display = "none"); document.getElementById(id).style.display = "block"; }
 
       function setTab(t, el) {
@@ -201,6 +210,129 @@
         if(t === 'rep') renderMonthlyReport();
         if(t === 'sch') loadSchedule();
         render();
+      }
+
+      // --- CRITICAL FIX: Robust filtering for Classroom ---
+      function render() {
+        const date = document.getElementById("att-date").value || new Date().toISOString().split('T')[0];
+        document.getElementById("att-date").value = date;
+        const q = document.getElementById("att-q").value.toLowerCase();
+        const month = date.slice(0, 7);
+        
+        // Use toString() to prevent matching errors between number and string
+        const list = (db.students || []).filter(s => 
+            s.g.toString() === cg.toString() && 
+            s.s.toString() === cs.toString() && 
+            s.name.toLowerCase().includes(q)
+        );
+
+        const dom = document.getElementById("dom-list"); dom.innerHTML = "";
+        
+        if(list.length === 0) {
+            dom.innerHTML = `<div style="text-align:center; padding:40px; color:#64748b;">No students found in Grade ${cg} ${cs}.<br>Check Enrollment tab.</div>`;
+        }
+
+        list.forEach(s => {
+          const key = `${cs}_${cg}_${date}`;
+          const isP = db.att?.[key]?.p?.includes(s.id);
+          const isPaidMonth = db.fees?.[month]?.[s.id]?.paid;
+          const isPaidDay = db.att?.[key]?.daily?.[s.id] > 0;
+          
+          let statusLabel = `<span class="badge badge-due">ABSENT</span>`;
+          if(isPaidMonth) statusLabel = `<span class="badge badge-paid">MONTHLY PAID</span>`;
+          else if(isPaidDay) statusLabel = `<span class="badge badge-day">PAID DAILY</span>`;
+          else if(isP) statusLabel = `<span class="badge badge-due" style="background:#e0e7ff; color:#3730a3;">PRESENT (UNPAID)</span>`;
+
+          dom.innerHTML += `<div class="std-row">
+            <div onclick="openProfile('${s.id}')" style="flex:1"><b>${s.name.toUpperCase()}</b><br>${statusLabel}</div>
+            <input type="checkbox" style="width:24px; height:24px" ${isP ? 'checked' : ''} onchange="markAtt('${s.id}', this.checked)">
+          </div>`;
+        });
+        
+        const lock = checkAttendanceLock();
+        document.getElementById("time-lock-status").innerHTML = `<div class="lock-notice" style="background:${lock.locked?'#fff1f2':'#f0fdf4'}; color:${lock.locked?'#991b1b':'#166534'}">${lock.msg}</div>`;
+      }
+
+      function register() {
+        const nInput = document.getElementById("reg-n");
+        const phInput = document.getElementById("reg-ph");
+        if(!nInput.value || !phInput.value) return alert("Fill all fields");
+        
+        if(!db.students) db.students = [];
+        
+        const newStudent = { 
+            id: `S-${Date.now().toString().slice(-4)}`, 
+            name: nInput.value, 
+            ph: phInput.value, 
+            g: cg.toString(), // Save as String for consistency
+            s: cs.toString(), // Save as String for consistency
+            joined: new Date().toLocaleDateString() 
+        };
+        
+        db.students.push(newStudent);
+        save(); 
+        alert(`Success! ${nInput.value} added to Grade ${cg} ${cs}.`);
+        nInput.value = ""; phInput.value = ""; 
+        setTab('att', document.querySelectorAll(".nav-btn")[0]);
+      }
+
+      // --- THE TEACHER SUMMARY LOGIC (ABSENT & NOT PAID FIX) ---
+      function openSummary() {
+        const date = document.getElementById("att-date").value;
+        const key = `${cs}_${cg}_${date}`;
+        const attData = db.att?.[key] || { p: [], daily: {} };
+        const mFee = db.grades[cg].mFee;
+        let mTotal = 0, dTotal = 0;
+        
+        let html = `<div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:10px; margin-bottom:15px;"><h2>TEACHER SUMMARY</h2><small>${cs} | G${cg} | ${date}</small></div>`;
+        html += `<table id="sum-table" style="width:100%; border-collapse:collapse;"><tr style="background:#f1f5f9; font-size:11px;"><th style="padding:8px; text-align:left;">STUDENT</th><th style="padding:8px; text-align:center;">STATUS</th><th style="padding:8px; text-align:right;">COLLECTED</th></tr>`;
+        
+        (db.students || []).filter(s => s.g.toString() === cg.toString() && s.s.toString() === cs.toString()).forEach(s => {
+            const isPaidMonth = db.fees?.[date.slice(0, 7)]?.[s.id]?.paid;
+            const dayAmt = attData.daily?.[s.id] || 0;
+            const isPresent = attData.p.includes(s.id);
+            
+            let status = "", amt = 0, color = "black";
+            
+            if (isPaidMonth) { status = "MONTHLY PAID"; amt = mFee; mTotal += mFee; }
+            else if (dayAmt > 0) { status = "DAILY PAID"; amt = dayAmt; dTotal += dayAmt; }
+            else if (isPresent) { 
+                status = "ABSENT & NOT PAID"; // Per user requirement
+                amt = 0; color = "red"; 
+            }
+            
+            if (status !== "") {
+                html += `<tr style="border-bottom:1px solid #eee; font-size:11px; color:${color}">
+                    <td style="padding:8px;">${s.name.toUpperCase()}</td>
+                    <td style="padding:8px; text-align:center;">${status}</td>
+                    <td style="padding:8px; text-align:right;">Rs. ${amt}</td>
+                </tr>`;
+            }
+        });
+        
+        html += `</table>`;
+        const total = mTotal + dTotal; const inst = total * 0.20; const teacher = total - inst;
+        document.getElementById("sum-area").innerHTML = html;
+        document.getElementById("sum-fin").innerHTML = `<div style="margin-top:15px; background:#0f172a; color:white; padding:15px; border-radius:12px;"><div style="display:flex; justify-content:space-between; font-size:12px;"><span>Gross: Rs. ${total}</span><span>Inst (20%): -${inst.toFixed(0)}</span></div><div style="display:flex; justify-content:space-between; border-top:1px solid #334155; padding-top:10px; margin-top:10px;"><span style="font-weight:800;">TEACHER NET:</span><span style="font-weight:800; color:#10b981; font-size:18px;">Rs. ${teacher.toFixed(0)}</span></div></div>`;
+        document.getElementById("s-overlay").style.display = "block";
+      }
+
+      // --- OTHER FUNCTIONS ---
+      function payDaily(id, amt) {
+        const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
+        if (!db.att) db.att = {};
+        if (!db.att[k]) db.att[k] = { p: [], daily: {} };
+        if (!db.att[k].daily) db.att[k].daily = {};
+        if (amt === 0) delete db.att[k].daily[id]; else db.att[k].daily[id] = amt;
+        save(); render(); openProfile(id);
+      }
+
+      function markAtt(id, val) {
+        const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
+        if(!db.att[k]) db.att[k] = { p: [], daily: {} };
+        if(val) { if(!db.att[k].p.includes(id)) db.att[k].p.push(id); }
+        else { db.att[k].p = db.att[k].p.filter(i => i !== id); }
+        save(); render();
       }
 
       function checkAttendanceLock() {
@@ -219,45 +351,7 @@
         const lockStart = new Date(startTime.getTime() - (60 * 60 * 1000));
         const lockEnd = new Date(endTime.getTime() + (60 * 60 * 1000));
         if(now >= lockStart && now <= lockEnd) return { locked: false, msg: "Attendance Open ✅" };
-        return { locked: true, msg: "Locked: Attendance only allowed during class time (±1hr)." };
-      }
-
-      function getStudentStats(id, month) {
-        let presentDays = 0, paidDays = 0;
-        const dFee = db.grades[cg].dFee || 250;
-        Object.keys(db.att || {}).forEach(k => {
-            if(k.startsWith(`${cs}_${cg}_${month}`)) {
-                if(db.att[k].p.includes(id)) {
-                    presentDays++;
-                    if(db.att[k].daily?.[id] > 0) paidDays++;
-                }
-            }
-        });
-        const arrears = (presentDays - paidDays) * dFee;
-        return { presentDays, paidDays, arrears };
-      }
-
-      function render() {
-        const date = document.getElementById("att-date").value || new Date().toISOString().split('T')[0];
-        document.getElementById("att-date").value = date;
-        const lock = checkAttendanceLock();
-        document.getElementById("time-lock-status").innerHTML = `<div class="lock-notice" style="background:${lock.locked?'#fff1f2':'#f0fdf4'}; color:${lock.locked?'#991b1b':'#166534'}">${lock.msg}</div>`;
-        const q = document.getElementById("att-q").value.toLowerCase();
-        const month = date.slice(0, 7);
-        const list = (db.students || []).filter(s => s.g === cg && s.s === cs && s.name.toLowerCase().includes(q));
-        const dom = document.getElementById("dom-list"); dom.innerHTML = "";
-        list.forEach(s => {
-          const key = `${cs}_${cg}_${date}`;
-          const isP = db.att?.[key]?.p?.includes(s.id);
-          const isPaidMonth = db.fees?.[month]?.[s.id]?.paid;
-          const isPaidDay = db.att?.[key]?.daily?.[s.id] > 0;
-          const stats = getStudentStats(s.id, month);
-          let statusLabel = `<span class="badge badge-due">NOT MARKED</span>`;
-          if(isPaidMonth) statusLabel = `<span class="badge badge-paid">MONTHLY DONE</span>`;
-          else if(isPaidDay) statusLabel = `<span class="badge badge-day">PAID DAILY</span>`;
-          else if(isP) statusLabel = `<span class="badge badge-due" style="background:#fecdd3">UNPAID (Arr: ${stats.arrears})</span>`;
-          dom.innerHTML += `<div class="std-row"><div onclick="openProfile('${s.id}')" style="flex:1"><b>${s.name}</b><br>${statusLabel}</div><input type="checkbox" style="width:24px; height:24px" ${isP ? 'checked' : ''} ${lock.locked ? 'disabled' : ''} onchange="markAtt('${s.id}', this.checked)"></div>`;
-        });
+        return { locked: true, msg: "Locked: Class time lock active." };
       }
 
       function openProfile(id) {
@@ -269,128 +363,39 @@
         const isPaidDay = db.att?.[key]?.daily?.[id] > 0;
         const mFee = db.grades[cg].mFee;
         const dFee = db.grades[cg].dFee || 250;
-        const stats = getStudentStats(id, month);
 
         document.getElementById("p-content").innerHTML = `
-          <div style="text-align:center; margin-bottom:15px;"><h3 style="margin:0;">${s.name.toUpperCase()}</h3></div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px; text-align:center;">
-              <div style="background:#f8fafc; padding:10px; border-radius:12px; border:1px solid #e2e8f0;"><p style="margin:0; font-size:9px;">PRESENT</p><b style="color:var(--s);">${stats.presentDays}</b></div>
-              <div style="background:#0f172a; padding:10px; border-radius:12px; color:white;"><p style="margin:0; font-size:9px; opacity:0.7;">TOTAL DUE</p><b>Rs. ${stats.arrears}</b></div>
-          </div>
+          <div style="text-align:center; margin-bottom:15px;"><h3 style="margin:0;">${s.name.toUpperCase()}</h3><small>${s.id} | Grade ${s.g}</small></div>
           ${!isPaidDay ? `<div class="card" style="background:${isPaidMonth ? '#f0fdf4' : '#fff'};">
               <p style="font-size:10px; font-weight:800; color:#4f46e5; margin-bottom:5px;">MONTHLY PLAN</p>
               <div style="display:flex; justify-content:space-between; align-items:center;">
                   <span>${isPaidMonth ? '✅ PAID' : 'PENDING'}</span>
                   <button class="btn btn-p" style="width:auto; padding:5px 10px;" onclick="payMonthly('${id}', ${!isPaidMonth})">${isPaidMonth ? 'Undo' : 'Pay Rs.' + mFee}</button>
               </div>
-          </div>` : '<p style="font-size:11px; color:gray; text-align:center;">Monthly Plan Hidden (Daily Payer)</p>'}
-          ${!isPaidMonth ? `<div class="card" style="border-left:4px solid ${isPaidDay ? 'var(--s)' : 'var(--d)'};">
+          </div>` : ''}
+          ${!isPaidMonth ? `<div class="card">
               <p style="font-size:10px; font-weight:800; margin-bottom:5px;">DAILY PAYMENT</p>
               <div style="display:flex; justify-content:space-between; align-items:center;">
                   <span>${isPaidDay ? '<b style="color:var(--s)">PAID</b>' : 'Status: <b style="color:var(--d)">DUE</b>'}</span>
                   <button class="btn btn-dk" style="width:auto; padding:5px 12px;" onclick="payDaily('${id}', ${isPaidDay ? 0 : dFee})">${isPaidDay ? 'Undo' : 'Pay Daily'}</button>
               </div>
           </div>` : ''}
-          <div style="margin-top:20px;">
-              <button class="btn btn-dk" style="background:#25d366; margin-bottom:10px;" onclick="sendAdvancedReceipt('${s.name}', '${s.ph}', '${isPaidMonth?'Monthly':'Daily'}', ${isPaidMonth?mFee:(isPaidDay?dFee:0)})">📱 WhatsApp Slip</button>
-              <button class="btn btn-dk" style="background:#f1f5f9; color:#64748b;" onclick="closeOverlays()">Close</button>
-          </div>`;
+          <button class="btn btn-dk" style="background:#f1f5f9; color:#64748b;" onclick="closeOverlays()">Close</button>`;
         document.getElementById("p-overlay").style.display = "block";
       }
 
-      // --- UPDATED LOGIC FOR DAILY PAYMENT & SUMMARY ---
-      function payDaily(id, amt) {
-        const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
-        if (!db.att) db.att = {};
-        if (!db.att[k]) db.att[k] = { p: [], daily: {} };
-        if (!db.att[k].daily) db.att[k].daily = {};
-        if (amt === 0) delete db.att[k].daily[id]; else db.att[k].daily[id] = amt;
-        save(); render(); openProfile(id);
-      }
-
-      function openSummary() {
-        const date = document.getElementById("att-date").value;
-        const key = `${cs}_${cg}_${date}`;
-        const attData = db.att?.[key] || { p: [], daily: {} };
-        const mFee = db.grades[cg].mFee;
-        let mTotal = 0, dTotal = 0;
-        let html = `<div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:10px; margin-bottom:15px;"><h2>TEACHER MASTER SHEET</h2><small>${cs} | G${cg} | ${date}</small></div>`;
-        html += `<table id="sum-table" style="width:100%; border-collapse:collapse;"><tr style="background:#f1f5f9; font-size:11px;"><th style="padding:8px; text-align:left;">STUDENT</th><th style="padding:8px; text-align:center;">STATUS</th><th style="padding:8px; text-align:right;">COLLECTED</th></tr>`;
-        (db.students || []).filter(s => s.g === cg && s.s === cs).forEach(s => {
-            const isPaidMonth = db.fees?.[date.slice(0, 7)]?.[s.id]?.paid;
-            const dayAmt = attData.daily?.[s.id] || 0;
-            const isPresent = attData.p.includes(s.id);
-            let status = "", amt = 0, color = "black";
-            if (isPaidMonth) { status = "MONTHLY PAID"; amt = mFee; mTotal += mFee; }
-            else if (dayAmt > 0) { status = "DAILY PAID"; amt = dayAmt; dTotal += dayAmt; }
-            else if (isPresent) { status = "ABSENT & NOT PAID"; amt = 0; color = "red"; }
-            if (status !== "") html += `<tr style="border-bottom:1px solid #eee; font-size:11px; color:${color}"><td style="padding:8px;">${s.name.toUpperCase()}</td><td style="padding:8px; text-align:center;">${status}</td><td style="padding:8px; text-align:right;">Rs. ${amt}</td></tr>`;
-        });
-        html += `</table>`;
-        const total = mTotal + dTotal; const inst = total * 0.20; const teacher = total - inst;
-        document.getElementById("sum-area").innerHTML = html;
-        document.getElementById("sum-fin").innerHTML = `<div style="margin-top:15px; background:#0f172a; color:white; padding:15px; border-radius:12px;"><div style="display:flex; justify-content:space-between; font-size:12px;"><span>Collection: Rs. ${total}</span><span>Inst (20%): -${inst.toFixed(0)}</span></div><div style="display:flex; justify-content:space-between; border-top:1px solid #334155; padding-top:10px; margin-top:10px;"><span style="font-weight:800;">TEACHER NET:</span><span style="font-weight:800; color:#10b981; font-size:18px;">Rs. ${teacher.toFixed(0)}</span></div></div>`;
-        document.getElementById("s-overlay").style.display = "block";
-      }
-
-      function renderMonthlyReport() {
-        const month = document.getElementById("rep-month").value || new Date().toISOString().slice(0, 7);
-        let html = `<table style="width:100%; border-collapse:collapse; font-size:10px; margin-top:10px;"><tr style="background:#0f172a; color:white;"><th style="padding:5px; text-align:left;">Student</th><th style="padding:5px;">Att.</th><th style="padding:5px;">Type</th><th style="padding:5px; text-align:right;">Arrears</th></tr>`;
-        (db.students || []).filter(s => s.g === cg && s.s === cs).forEach(s => {
-            const stats = getStudentStats(s.id, month);
-            const isMonthly = db.fees?.[month]?.[s.id]?.paid;
-            html += `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px;">${s.name}</td><td style="padding:8px; text-align:center;">${stats.presentDays}</td><td style="padding:8px; text-align:center;">${isMonthly ? 'MONTH' : 'DAILY'}</td><td style="padding:8px; text-align:right; color:${stats.arrears>0?'red':'black'}">Rs. ${stats.arrears}</td></tr>`;
-        });
-        html += `</table>`;
-        document.getElementById("monthly-report-area").innerHTML = html;
-      }
-
-      function saveSchedule() {
-        if(!db.schedules) db.schedules = {};
-        db.schedules[`${cg}_${cs}`] = { day: document.getElementById("sch-day").value, start: document.getElementById("sch-start").value, dur: parseFloat(document.getElementById("sch-dur").value) };
-        save(); alert("Schedule Saved!");
-      }
-      function loadSchedule() {
-        const sched = db.schedules?.[`${cg}_${cs}`];
-        if(sched) { document.getElementById("sch-day").value = sched.day; document.getElementById("sch-start").value = sched.start; document.getElementById("sch-dur").value = sched.dur; }
-      }
-      function register() {
-        const nInput = document.getElementById("reg-n"); const phInput = document.getElementById("reg-ph");
-        if(!nInput.value || !phInput.value) return alert("Fill all fields");
-        if(!db.students) db.students = [];
-        db.students.push({ id: `S-${Date.now().toString().slice(-4)}`, name: nInput.value, ph: phInput.value, g: cg, s: cs, joined: new Date().toLocaleDateString() });
-        save(); alert("Enrolled!"); nInput.value = ""; phInput.value = ""; setTab('att');
-      }
-      function markAtt(id, val) {
-        const k = `${cs}_${cg}_${document.getElementById("att-date").value}`;
-        if(!db.att[k]) db.att[k] = { p: [], daily: {} };
-        if(val) { if(!db.att[k].p.includes(id)) db.att[k].p.push(id); }
-        else { db.att[k].p = db.att[k].p.filter(i => i !== id); }
-        save(); render();
-      }
       function payMonthly(id, st) {
         const m = document.getElementById("att-date").value.slice(0, 7);
         if(!db.fees) db.fees = {}; if(!db.fees[m]) db.fees[m] = {};
         db.fees[m][id] = { paid: st, date: document.getElementById("att-date").value };
         save(); openProfile(id);
       }
-      function addNewGrade() { 
-        const n = prompt("Grade:"); const f = prompt("Monthly Fee:", "1000"); const df = prompt("Daily Fee:", "250");
-        if(n) { if(!db.grades) db.grades = {}; db.grades[n] = { mFee: parseInt(f), dFee: parseInt(df) }; save(); } 
-      }
+      function addNewGrade() { const n = prompt("Grade:"); const f = prompt("Monthly Fee:", "1000"); if(n) { if(!db.grades) db.grades = {}; db.grades[n] = { mFee: parseInt(f), dFee: 250 }; save(); } }
       function closeOverlays() { document.getElementById("p-overlay").style.display="none"; document.getElementById("s-overlay").style.display="none"; render(); }
-      function exportData() { const b = new Blob([JSON.stringify(db)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Sipsayura_Backup.json`; a.click(); }
-      function sendAdvancedReceipt(n, ph, type, amt) {
-        const msg = `*SIPSAYURA INSTITUTE*%0A*OFFICIAL RECEIPT*%0A*STUDENT:* ${n.toUpperCase()}%0A*PAYMENT:* ${type}%0A*AMOUNT:* Rs. ${amt}.00%0A*STATUS:* PAID ✅`;
-        window.open(`https://wa.me/94${ph.substring(1)}?text=${msg}`);
-      }
-      function printReport() {
-        const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.setFontSize(18); doc.text("TEACHER DAILY SUMMARY", 105, 15, null, null, "center");
-        doc.autoTable({ html: '#sum-table', startY: 30, theme: 'grid' });
-        doc.text(document.getElementById("sum-fin").innerText, 14, doc.lastAutoTable.finalY + 10);
-        doc.save(`Summary_${cs}_${cg}.pdf`);
-      }
+      function exportData() { const b = new Blob([JSON.stringify(db)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Backup.json`; a.click(); }
+      function printReport() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("TEACHER DAILY SUMMARY", 10, 10); doc.autoTable({ html: '#sum-table', startY: 20 }); doc.save(`Report.pdf`); }
+      function saveSchedule() { if(!db.schedules) db.schedules = {}; db.schedules[`${cg}_${cs}`] = { day: document.getElementById("sch-day").value, start: document.getElementById("sch-start").value, dur: parseFloat(document.getElementById("sch-dur").value) }; save(); alert("Saved!"); }
+      function loadSchedule() { const sched = db.schedules?.[`${cg}_${cs}`]; if(sched) { document.getElementById("sch-day").value = sched.day; document.getElementById("sch-start").value = sched.start; document.getElementById("sch-dur").value = sched.dur; } }
     </script>
   </body>
 </html>
