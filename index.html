@@ -562,52 +562,56 @@
         const date = dateInput.value || new Date().toISOString().split("T")[0];
         dateInput.value = date;
 
+        const q = document.getElementById("att-q").value.toLowerCase();
         const month = date.slice(0, 7);
         const key = `${cs}_${cg}_${date}`;
-        const prevDate = getLastClassDate(date);
-        const prevKey = prevDate ? `${cs}_${cg}_${prevDate}` : null;
 
         const list = (db.students || []).filter(
           (s) =>
+            s.g &&
             s.g.toString() === cg.toString() &&
-            s.s.toString() === cs.toString(),
+            s.s &&
+            s.s.toString() === cs.toString() &&
+            s.name.toLowerCase().includes(q),
         );
-
         const dom = document.getElementById("dom-list");
         dom.innerHTML = "";
+
+        const lock = checkLock();
+        document.getElementById("lock-banner").innerHTML =
+          `<div class="lock-msg" style="background:${lock.ok ? "#f0fdf4" : "#fff1f2"}; color:${lock.ok ? "#166534" : "#991b1b"}">${lock.msg}</div>`;
 
         list.forEach((s) => {
           const isP = db.att?.[key]?.p?.includes(s.id);
           const isPM = db.fees?.[month]?.[s.id]?.paid;
           const isPD = db.att?.[key]?.daily?.[s.id] > 0;
 
-          // Arrears Check
-          let arrearsMsg = "";
-          if (prevKey) {
-            const wasP = db.att[prevKey]?.p?.includes(s.id);
-            const wasPD = db.att[prevKey]?.daily?.[s.id] > 0;
-            const wasPM = db.fees?.[prevDate.slice(0, 7)]?.[s.id]?.paid;
-            if (wasP && !wasPD && !wasPM) {
-              arrearsMsg = `<span style="color:var(--d); font-size:10px; font-weight:bold;">⚠️ LAST DAY UNPAID</span>`;
-            }
+          let st = `<span class="badge badge-due">ABSENT</span>`;
+          let statusText = "Absent";
+          if (isPM) {
+            st = `<span class="badge badge-paid">MONTHLY</span>`;
+            statusText = "Present (Monthly Paid)";
+          } else if (isPD) {
+            st = `<span class="badge badge-day">PAID DAY</span>`;
+            statusText = "Present (Daily Paid)";
+          } else if (isP) {
+            st = `<span class="badge" style="background:#e0e7ff; color:#3730a3">PRESENT</span>`;
+            statusText = "Present (Fees Due)";
           }
 
-          let st = `<span class="badge badge-due">ABSENT</span>`;
-          if (isPM) st = `<span class="badge badge-paid">MONTHLY PAID</span>`;
-          else if (isPD) st = `<span class="badge badge-day">DAILY PAID</span>`;
-          else if (isP)
-            st = `<span class="badge" style="background:#e0e7ff; color:#3730a3">PRESENT</span>`;
-
-          dom.innerHTML += `
-            <div class="std-row" style="${arrearsMsg ? "border-left: 4px solid var(--d);" : ""}">
-              <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer;">
-                <b>${s.name.toUpperCase()}</b> ${arrearsMsg}<br>${st}
-              </div>
-              <div style="display:flex; align-items:center; gap:10px;">
-                ${isP ? `<button onclick="sendWA('${s.id}', 'Present')" style="border:none; background:none; cursor:pointer;"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="22"></button>` : ""}
-                <input type="checkbox" style="width:22px; height:22px" ${isP ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
-              </div>
-            </div>`;
+          dom.innerHTML += `<div class="std-row">
+    <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer;"><b>${s.name.toUpperCase()}</b><br>${st}</div>
+    <div style="display:flex; align-items:center; gap:10px;">
+        ${
+          isP
+            ? `<button onclick="sendWA('${s.id}', 'Present')" style="border:none; background:none; cursor:pointer;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="24" height="24">
+        </button>`
+            : ""
+        }
+        <input type="checkbox" style="width:22px; height:22px" ${isP ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
+    </div>
+</div>`;
         });
       }
 
@@ -696,16 +700,16 @@
         const mFee =
           db.grades[cg] && db.grades[cg].mFee ? db.grades[cg].mFee : 1000;
 
-        let dailyCash = 0;
-        let monthlyTotal = 0;
+        let totalCollection = 0;
         let presentCount = 0;
-        let arrearsList = [];
-
-        const prevDate = getLastClassDate(date);
-        const prevKey = prevDate ? `${cs}_${cg}_${prevDate}` : null;
 
         let html = `<h3>Summary - ${date}</h3><table id="sum-table" style="width:100%; border-collapse:collapse; font-size:11px;">`;
-        html += `<tr style="background:#4f46e5; color:white; text-align:left;"><th style="padding:8px">Student</th><th>Status</th><th>Amt</th></tr>`;
+        html += `<tr style="background:#4f46e5; color:white; text-align:left;">
+                    <th style="padding:8px">Student Name</th>
+                    <th>Attendance</th>
+                    <th>Payment</th>
+                    <th>Amount</th>
+                 </tr>`;
 
         const studentsInClass = (db.students || []).filter(
           (s) =>
@@ -717,52 +721,61 @@
           const isPM = db.fees?.[date.slice(0, 7)]?.[s.id]?.paid;
           const isPD = attData.daily ? attData.daily[s.id] || 0 : 0;
           const isP = attData.p ? attData.p.includes(s.id) : false;
+
           if (isP) presentCount++;
 
-          // Arrears Logic for Summary
-          if (prevKey) {
-            const wasP = db.att[prevKey]?.p?.includes(s.id);
-            const wasPD = db.att[prevKey]?.daily?.[s.id] > 0;
-            const wasPM = db.fees?.[prevDate.slice(0, 7)]?.[s.id]?.paid;
-            if (wasP && !wasPD && !wasPM)
-              arrearsList.push(s.name.toUpperCase());
-          }
-
+          let attendanceStatus = isP ? "PRESENT" : "ABSENT";
+          let paymentStatus = "NOT PAID";
           let amt = 0;
-          let status = isP ? "Present" : "Absent";
+          let rowColor = isP ? "black" : "#94a3b8";
+
           if (isPM) {
-            status = "Monthly";
+            paymentStatus = "MONTHLY";
             amt = mFee;
-            monthlyTotal += amt;
           } else if (isPD > 0) {
-            status = "Daily";
+            paymentStatus = "DAILY";
             amt = isPD;
-            dailyCash += amt;
+          } else if (isP) {
+            paymentStatus = "DUE";
+            rowColor = "#b91c1c"; // Dark red for present but unpaid
           }
 
-          html += `<tr style="border-bottom:1px solid #ddd;"><td style="padding:8px">${s.name}</td><td>${status}</td><td>${amt > 0 ? amt : "-"}</td></tr>`;
+          totalCollection += amt;
+
+          html += `
+                <tr style="color:${rowColor}; border-bottom:1px solid #ddd;">
+                    <td style="padding:8px"><b>${s.name.toUpperCase()}</b></td>
+                    <td>${attendanceStatus}</td>
+                    <td>${paymentStatus}</td>
+                    <td>${amt > 0 ? "Rs." + amt : "-"}</td>
+                </tr>`;
         });
 
+        const instituteFee = totalCollection * 0.2;
+        const teacherPayment = totalCollection * 0.8;
+
         html += `</table>`;
+
         document.getElementById("sum-area").innerHTML = html;
 
-        // Final Balance + Arrears UI
-        let arrearsHTML =
-          arrearsList.length > 0
-            ? `<div style="margin-top:10px; padding:10px; background:#fff1f2; border:1px solid #fda4af; border-radius:8px;">
-                <b style="color:#991b1b; font-size:11px;">⚠️ UNPAID FROM PREVIOUS CLASS (${prevDate}):</b><br>
-                <span style="font-size:10px; color:#b91c1c;">${arrearsList.join(", ")}</span>
-            </div>`
-            : "";
-
+        // Detailed Financial Breakdown
         document.getElementById("sum-fin").innerHTML = `
-            ${arrearsHTML}
-            <div style="margin-top:15px; padding:12px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; font-size:13px;">
-                <div style="display:flex; justify-content:space-between; color:#16a34a;"><span><b>Physical Cash (Daily):</b></span> <b>Rs. ${dailyCash}</b></div>
-                <div style="display:flex; justify-content:space-between;"><span>Monthly Collection:</span> <b>Rs. ${monthlyTotal}</b></div>
-                <hr style="margin:8px 0; border:0; border-top:1px solid #cbd5e1;">
-                <div style="display:flex; justify-content:space-between; font-size:15px; color:#4f46e5;"><span><b>Teacher (80%):</b></span> <b>Rs. ${((dailyCash + monthlyTotal) * 0.8).toFixed(0)}</b></div>
+            <div style="margin-top:15px; padding:15px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span>Total Students Present:</span> <b>${presentCount}</b>
+                </div>
+                <hr style="border:0; border-top:1px solid #e2e8f0; margin:10px 0;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span>Total Collection:</span> <b>Rs. ${totalCollection.toLocaleString()}</b>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px; color:#ef4444;">
+                    <span>Institute Fee (20%):</span> <b>- Rs. ${instituteFee.toLocaleString()}</b>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:2px solid #e2e8f0; font-size:16px; color:#10b981;">
+                    <b>Teacher Payment:</b> <b>Rs. ${teacherPayment.toLocaleString()}</b>
+                </div>
             </div>`;
+
         document.getElementById("s-overlay").style.display = "block";
       }
       function register() {
