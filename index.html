@@ -494,7 +494,25 @@
         }
         save();
       }
+      function sendWA(id, status) {
+        const s = db.students.find((x) => x.id === id);
+        const date = document.getElementById("att-date").value;
+        const msg =
+          `*Sipsayura Elite Notice*%0A%0A` +
+          `Student: *${s.name.toUpperCase()}*%0A` +
+          `Date: ${date}%0A` +
+          `Subject: ${cs}%0A` +
+          `Status: *${status}*%0A%0A` +
+          `Thank you.`;
 
+        // Clean phone number (remove spaces/dashes)
+        let phone = s.ph.replace(/\D/g, "");
+        // Add country code if not present (assuming Sri Lanka +94)
+        if (phone.length === 9) phone = "94" + phone;
+        if (phone.startsWith("0")) phone = "94" + phone.substring(1);
+
+        window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+      }
       function render() {
         if (document.getElementById("v-dash").style.display === "none") return;
 
@@ -527,14 +545,26 @@
           const isPD = db.att?.[key]?.daily?.[s.id] > 0;
 
           let st = `<span class="badge badge-due">ABSENT</span>`;
-          if (isPM) st = `<span class="badge badge-paid">MONTHLY</span>`;
-          else if (isPD) st = `<span class="badge badge-day">PAID DAY</span>`;
-          else if (isP)
+          let statusText = "Absent";
+          if (isPM) {
+            st = `<span class="badge badge-paid">MONTHLY</span>`;
+            statusText = "Present (Monthly Paid)";
+          } else if (isPD) {
+            st = `<span class="badge badge-day">PAID DAY</span>`;
+            statusText = "Present (Daily Paid)";
+          } else if (isP) {
             st = `<span class="badge" style="background:#e0e7ff; color:#3730a3">PRESENT</span>`;
+            statusText = "Present (Fees Due)";
+          }
 
           dom.innerHTML += `<div class="std-row">
             <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer;"><b>${s.name.toUpperCase()}</b><br>${st}</div>
-            <input type="checkbox" style="width:22px; height:22px" ${isP ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button onclick="sendWA('${s.id}', '${statusText}')" style="border:none; background:none; cursor:pointer; font-size:20px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="24" height="24">
+                </button>
+                <input type="checkbox" style="width:22px; height:22px" ${isP ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
+            </div>
           </div>`;
         });
       }
