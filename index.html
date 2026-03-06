@@ -285,9 +285,31 @@
               </button>
               <button class="btn btn-s" onclick="save()">✔️ Cloud Sync</button>
             </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                margin-bottom: 10px;
+              "
+            >
+              <button
+                class="btn btn-p"
+                onclick="bulkWhatsApp('att')"
+                style="background: #25d366"
+              >
+                📢 Bulk Presence
+              </button>
+              <button
+                class="btn btn-p"
+                onclick="bulkWhatsApp('pay')"
+                style="background: #128c7e"
+              >
+                💰 Bulk Payment
+              </button>
+            </div>
             <div id="dom-list"></div>
           </div>
-
           <div id="tab-sch" style="display: none">
             <div class="card">
               <h3>Set Schedule</h3>
@@ -547,6 +569,73 @@
         if (phone.startsWith("0")) phone = "94" + phone.substring(1);
 
         window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+      }
+      function bulkWhatsApp(mode) {
+        const date = document.getElementById("att-date").value;
+        const key = `${cs}_${cg}_${date}`;
+        const month = date.slice(0, 7);
+
+        // Get only the students currently showing in the list
+        const students = (db.students || []).filter(
+          (s) =>
+            s.g.toString() === cg.toString() &&
+            s.s.toString() === cs.toString(),
+        );
+
+        if (students.length === 0)
+          return alert("No students found in this class.");
+
+        if (
+          !confirm(
+            `This will open WhatsApp for students in this list. Continue?`,
+          )
+        )
+          return;
+
+        students.forEach((s, index) => {
+          const isP = db.att?.[key]?.p?.includes(s.id);
+          const isPM = db.fees?.[month]?.[s.id]?.paid;
+          const isPD = db.att?.[key]?.daily?.[s.id] > 0;
+          const mFee =
+            db.grades[cg] && db.grades[cg].mFee ? db.grades[cg].mFee : 1000;
+
+          let msg = "";
+
+          if (mode === "att" && isP) {
+            // Send Presence Message
+            msg =
+              `*SIPSAYURA ELITE - ATTENDANCE*%0A%0A` +
+              `Student: *${s.name.toUpperCase()}*%0A` +
+              `Date: ${date}%0A` +
+              `Status: *HAS ARRIVED TO CLASS* ✅`;
+          } else if (mode === "pay") {
+            if (isPM || isPD) {
+              // Send Receipt if paid
+              const type = isPM ? "Monthly Fee" : "Daily Fee";
+              const amt = isPM ? mFee : db.att[key].daily[s.id];
+              msg =
+                `*SIPSAYURA ELITE - PAYMENT CONFIRMED*%0A%0A` +
+                `Student: *${s.name.toUpperCase()}*%0A` +
+                `Type: ${type}%0A` +
+                `Amount: Rs. ${amt}%0A` +
+                `Status: *PAID* ✅`;
+            } else if (isP) {
+              // Send Reminder if present but not paid
+              msg =
+                `*SIPSAYURA ELITE - PAYMENT REMINDER*%0A%0A` +
+                `Student: *${s.name.toUpperCase()}*%0A` +
+                `Status: *FEES PENDING* ⚠️%0A` +
+                `Please settle the class fees at your earliest.`;
+            }
+          }
+
+          if (msg !== "") {
+            // Delay opening windows slightly to prevent browser crash
+            setTimeout(() => {
+              openWhatsApp(s.ph, msg);
+            }, index * 1200);
+          }
+        });
       }
       function render() {
         if (document.getElementById("v-dash").style.display === "none") return;
