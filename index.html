@@ -575,24 +575,36 @@
         const key = `${cs}_${cg}_${date}`;
         const month = date.slice(0, 7);
 
-        // Get only the students currently showing in the list
         const students = (db.students || []).filter(
           (s) =>
             s.g.toString() === cg.toString() &&
             s.s.toString() === cs.toString(),
         );
 
-        if (students.length === 0)
-          return alert("No students found in this class.");
+        if (students.length === 0) return alert("No students found.");
+
+        // Filtering target list
+        const targets = students.filter((s) => {
+          const isP = db.att?.[key]?.p?.includes(s.id);
+          const isPM = db.fees?.[month]?.[s.id]?.paid;
+          const isPD = db.att?.[key]?.daily?.[s.id] > 0;
+
+          if (mode === "att") return isP; // Only present students
+          if (mode === "pay") return isP || isPM || isPD; // Present or paid
+          return false;
+        });
+
+        if (targets.length === 0)
+          return alert("No eligible students for this bulk action.");
 
         if (
           !confirm(
-            `This will open WhatsApp for students in this list. Continue?`,
+            `Sending ${targets.length} messages. Please ALLOW POP-UPS in your browser. Continue?`,
           )
         )
           return;
 
-        students.forEach((s, index) => {
+        targets.forEach((s, index) => {
           const isP = db.att?.[key]?.p?.includes(s.id);
           const isPM = db.fees?.[month]?.[s.id]?.paid;
           const isPD = db.att?.[key]?.daily?.[s.id] > 0;
@@ -600,41 +612,22 @@
             db.grades[cg] && db.grades[cg].mFee ? db.grades[cg].mFee : 1000;
 
           let msg = "";
-
-          if (mode === "att" && isP) {
-            // Send Presence Message
-            msg =
-              `*SIPSAYURA ELITE - ATTENDANCE*%0A%0A` +
-              `Student: *${s.name.toUpperCase()}*%0A` +
-              `Date: ${date}%0A` +
-              `Status: *HAS ARRIVED TO CLASS* ✅`;
-          } else if (mode === "pay") {
+          if (mode === "att") {
+            msg = `*SIPSAYURA ELITE - ATTENDANCE*%0A%0AStudent: *${s.name.toUpperCase()}*%0ADate: ${date}%0AStatus: *HAS ARRIVED TO CLASS* ✅`;
+          } else {
             if (isPM || isPD) {
-              // Send Receipt if paid
               const type = isPM ? "Monthly Fee" : "Daily Fee";
               const amt = isPM ? mFee : db.att[key].daily[s.id];
-              msg =
-                `*SIPSAYURA ELITE - PAYMENT CONFIRMED*%0A%0A` +
-                `Student: *${s.name.toUpperCase()}*%0A` +
-                `Type: ${type}%0A` +
-                `Amount: Rs. ${amt}%0A` +
-                `Status: *PAID* ✅`;
-            } else if (isP) {
-              // Send Reminder if present but not paid
-              msg =
-                `*SIPSAYURA ELITE - PAYMENT REMINDER*%0A%0A` +
-                `Student: *${s.name.toUpperCase()}*%0A` +
-                `Status: *FEES PENDING* ⚠️%0A` +
-                `Please settle the class fees at your earliest.`;
+              msg = `*SIPSAYURA ELITE - RECEIPT*%0A%0AStudent: *${s.name.toUpperCase()}*%0AAmount: Rs. ${amt}%0AStatus: *PAID* ✅`;
+            } else {
+              msg = `*SIPSAYURA ELITE - PAYMENT REMINDER*%0A%0AStudent: *${s.name.toUpperCase()}*%0AStatus: *FEES PENDING* ⚠️`;
             }
           }
 
-          if (msg !== "") {
-            // Delay opening windows slightly to prevent browser crash
-            setTimeout(() => {
-              openWhatsApp(s.ph, msg);
-            }, index * 1200);
-          }
+          // Automatic sequencing with a delay to prevent browser crash
+          setTimeout(() => {
+            openWhatsApp(s.ph, msg);
+          }, index * 2000); // 2-second interval for stability
         });
       }
       function render() {
