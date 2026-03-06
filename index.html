@@ -285,29 +285,6 @@
               </button>
               <button class="btn btn-s" onclick="save()">✔️ Cloud Sync</button>
             </div>
-            <div
-              style="
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-                margin-bottom: 10px;
-              "
-            >
-              <button
-                class="btn btn-p"
-                onclick="bulkWhatsApp('att')"
-                style="background: #25d366"
-              >
-                📢 Bulk Presence
-              </button>
-              <button
-                class="btn btn-p"
-                onclick="bulkWhatsApp('pay')"
-                style="background: #128c7e"
-              >
-                💰 Bulk Payment
-              </button>
-            </div>
             <div id="dom-list"></div>
           </div>
           <div id="tab-sch" style="display: none">
@@ -570,66 +547,7 @@
 
         window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
       }
-      function bulkWhatsApp(mode) {
-        const date = document.getElementById("att-date").value;
-        const key = `${cs}_${cg}_${date}`;
-        const month = date.slice(0, 7);
 
-        const students = (db.students || []).filter(
-          (s) =>
-            s.g.toString() === cg.toString() &&
-            s.s.toString() === cs.toString(),
-        );
-
-        if (students.length === 0) return alert("No students found.");
-
-        // Filtering target list
-        const targets = students.filter((s) => {
-          const isP = db.att?.[key]?.p?.includes(s.id);
-          const isPM = db.fees?.[month]?.[s.id]?.paid;
-          const isPD = db.att?.[key]?.daily?.[s.id] > 0;
-
-          if (mode === "att") return isP; // Only present students
-          if (mode === "pay") return isP || isPM || isPD; // Present or paid
-          return false;
-        });
-
-        if (targets.length === 0)
-          return alert("No eligible students for this bulk action.");
-
-        if (
-          !confirm(
-            `Sending ${targets.length} messages. Please ALLOW POP-UPS in your browser. Continue?`,
-          )
-        )
-          return;
-
-        targets.forEach((s, index) => {
-          const isP = db.att?.[key]?.p?.includes(s.id);
-          const isPM = db.fees?.[month]?.[s.id]?.paid;
-          const isPD = db.att?.[key]?.daily?.[s.id] > 0;
-          const mFee =
-            db.grades[cg] && db.grades[cg].mFee ? db.grades[cg].mFee : 1000;
-
-          let msg = "";
-          if (mode === "att") {
-            msg = `*SIPSAYURA ELITE - ATTENDANCE*%0A%0AStudent: *${s.name.toUpperCase()}*%0ADate: ${date}%0AStatus: *HAS ARRIVED TO CLASS* ✅`;
-          } else {
-            if (isPM || isPD) {
-              const type = isPM ? "Monthly Fee" : "Daily Fee";
-              const amt = isPM ? mFee : db.att[key].daily[s.id];
-              msg = `*SIPSAYURA ELITE - RECEIPT*%0A%0AStudent: *${s.name.toUpperCase()}*%0AAmount: Rs. ${amt}%0AStatus: *PAID* ✅`;
-            } else {
-              msg = `*SIPSAYURA ELITE - PAYMENT REMINDER*%0A%0AStudent: *${s.name.toUpperCase()}*%0AStatus: *FEES PENDING* ⚠️`;
-            }
-          }
-
-          // Automatic sequencing with a delay to prevent browser crash
-          setTimeout(() => {
-            openWhatsApp(s.ph, msg);
-          }, index * 2000); // 2-second interval for stability
-        });
-      }
       function render() {
         if (document.getElementById("v-dash").style.display === "none") return;
 
