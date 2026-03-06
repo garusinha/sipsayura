@@ -547,7 +547,14 @@
 
         window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
       }
-
+      function getLastClassDate(currentDate) {
+        const dates = Object.keys(db.att)
+          .filter((k) => k.startsWith(`${cs}_${cg}_`))
+          .map((k) => k.split(`${cs}_${cg}_`)[1])
+          .filter((d) => d < currentDate)
+          .sort();
+        return dates.length > 0 ? dates[dates.length - 1] : null;
+      }
       function render() {
         if (document.getElementById("v-dash").style.display === "none") return;
 
@@ -555,56 +562,52 @@
         const date = dateInput.value || new Date().toISOString().split("T")[0];
         dateInput.value = date;
 
-        const q = document.getElementById("att-q").value.toLowerCase();
         const month = date.slice(0, 7);
         const key = `${cs}_${cg}_${date}`;
+        const prevDate = getLastClassDate(date);
+        const prevKey = prevDate ? `${cs}_${cg}_${prevDate}` : null;
 
         const list = (db.students || []).filter(
           (s) =>
-            s.g &&
             s.g.toString() === cg.toString() &&
-            s.s &&
-            s.s.toString() === cs.toString() &&
-            s.name.toLowerCase().includes(q),
+            s.s.toString() === cs.toString(),
         );
+
         const dom = document.getElementById("dom-list");
         dom.innerHTML = "";
-
-        const lock = checkLock();
-        document.getElementById("lock-banner").innerHTML =
-          `<div class="lock-msg" style="background:${lock.ok ? "#f0fdf4" : "#fff1f2"}; color:${lock.ok ? "#166534" : "#991b1b"}">${lock.msg}</div>`;
 
         list.forEach((s) => {
           const isP = db.att?.[key]?.p?.includes(s.id);
           const isPM = db.fees?.[month]?.[s.id]?.paid;
           const isPD = db.att?.[key]?.daily?.[s.id] > 0;
 
-          let st = `<span class="badge badge-due">ABSENT</span>`;
-          let statusText = "Absent";
-          if (isPM) {
-            st = `<span class="badge badge-paid">MONTHLY</span>`;
-            statusText = "Present (Monthly Paid)";
-          } else if (isPD) {
-            st = `<span class="badge badge-day">PAID DAY</span>`;
-            statusText = "Present (Daily Paid)";
-          } else if (isP) {
-            st = `<span class="badge" style="background:#e0e7ff; color:#3730a3">PRESENT</span>`;
-            statusText = "Present (Fees Due)";
+          // Arrears Check
+          let arrearsMsg = "";
+          if (prevKey) {
+            const wasP = db.att[prevKey]?.p?.includes(s.id);
+            const wasPD = db.att[prevKey]?.daily?.[s.id] > 0;
+            const wasPM = db.fees?.[prevDate.slice(0, 7)]?.[s.id]?.paid;
+            if (wasP && !wasPD && !wasPM) {
+              arrearsMsg = `<span style="color:var(--d); font-size:10px; font-weight:bold;">⚠️ LAST DAY UNPAID</span>`;
+            }
           }
 
-          dom.innerHTML += `<div class="std-row">
-    <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer;"><b>${s.name.toUpperCase()}</b><br>${st}</div>
-    <div style="display:flex; align-items:center; gap:10px;">
-        ${
-          isP
-            ? `<button onclick="sendWA('${s.id}', 'Present')" style="border:none; background:none; cursor:pointer;">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="24" height="24">
-        </button>`
-            : ""
-        }
-        <input type="checkbox" style="width:22px; height:22px" ${isP ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
-    </div>
-</div>`;
+          let st = `<span class="badge badge-due">ABSENT</span>`;
+          if (isPM) st = `<span class="badge badge-paid">MONTHLY PAID</span>`;
+          else if (isPD) st = `<span class="badge badge-day">DAILY PAID</span>`;
+          else if (isP)
+            st = `<span class="badge" style="background:#e0e7ff; color:#3730a3">PRESENT</span>`;
+
+          dom.innerHTML += `
+            <div class="std-row" style="${arrearsMsg ? "border-left: 4px solid var(--d);" : ""}">
+              <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer;">
+                <b>${s.name.toUpperCase()}</b> ${arrearsMsg}<br>${st}
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                ${isP ? `<button onclick="sendWA('${s.id}', 'Present')" style="border:none; background:none; cursor:pointer;"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="22"></button>` : ""}
+                <input type="checkbox" style="width:22px; height:22px" ${isP ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
+              </div>
+            </div>`;
         });
       }
 
