@@ -494,6 +494,41 @@
         }
         save();
       }
+      // For general attendance/presence
+      function sendWA(id, status) {
+        const s = db.students.find((x) => x.id === id);
+        const date = document.getElementById("att-date").value;
+        const msg =
+          `*SIPSAYURA ELITE - ATTENDANCE*%0A%0A` +
+          `Student: *${s.name.toUpperCase()}*%0A` +
+          `Date: ${date}%0A` +
+          `Subject: ${cs}%0A` +
+          `Status: *HAS ARRIVED TO CLASS* ✅%0A%0A` +
+          `Thank you.`;
+        openWhatsApp(s.ph, msg);
+      }
+
+      // For payment receipts
+      function sendReceipt(id, type, amount) {
+        const s = db.students.find((x) => x.id === id);
+        const date = document.getElementById("att-date").value;
+        const msg =
+          `*SIPSAYURA ELITE - OFFICIAL RECEIPT*%0A%0A` +
+          `Received from: *${s.name.toUpperCase()}*%0A` +
+          `Date: ${date}%0A` +
+          `Payment Type: *${type}*%0A` +
+          `Amount: *Rs. ${amount.toLocaleString()}*%0A%0A` +
+          `Status: *PAID* ✅%0A%0A` +
+          `Thank you for your payment.`;
+        openWhatsApp(s.ph, msg);
+      }
+
+      function openWhatsApp(ph, msg) {
+        let phone = ph.replace(/\D/g, "");
+        if (phone.length === 9) phone = "94" + phone;
+        if (phone.startsWith("0")) phone = "94" + phone.substring(1);
+        window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+      }
       function sendWA(id, status) {
         const s = db.students.find((x) => x.id === id);
         const date = document.getElementById("att-date").value;
@@ -558,14 +593,18 @@
           }
 
           dom.innerHTML += `<div class="std-row">
-            <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer;"><b>${s.name.toUpperCase()}</b><br>${st}</div>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <button onclick="sendWA('${s.id}', '${statusText}')" style="border:none; background:none; cursor:pointer; font-size:20px;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="24" height="24">
-                </button>
-                <input type="checkbox" style="width:22px; height:22px" ${isP ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
-            </div>
-          </div>`;
+    <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer;"><b>${s.name.toUpperCase()}</b><br>${st}</div>
+    <div style="display:flex; align-items:center; gap:10px;">
+        ${
+          isP
+            ? `<button onclick="sendWA('${s.id}', 'Present')" style="border:none; background:none; cursor:pointer;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="24" height="24">
+        </button>`
+            : ""
+        }
+        <input type="checkbox" style="width:22px; height:22px" ${isP ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
+    </div>
+</div>`;
         });
       }
 
@@ -600,6 +639,7 @@
 
         const isPM = db.fees?.[month]?.[id]?.paid || false;
         const isPD = db.att?.[key]?.daily?.[id] > 0 || false;
+        const pdAmt = db.att?.[key]?.daily?.[id] || 0;
         const mFee =
           db.grades[cg] && db.grades[cg].mFee ? db.grades[cg].mFee : 1000;
         const dFee = 250;
@@ -608,11 +648,17 @@
           <h3>${s.name.toUpperCase()}</h3>
           <div class="card">
             <p>Monthly: ${isPM ? "<b>PAID</b>" : "DUE"}</p>
-            <button class="btn btn-p" onclick="payM('${id}', ${!isPM})">${isPM ? "Undo" : "Pay Rs." + mFee}</button>
+            <div style="display:flex; gap:5px;">
+                <button class="btn btn-p" onclick="payM('${id}', ${!isPM})">${isPM ? "Undo" : "Pay Rs." + mFee}</button>
+                ${isPM ? `<button class="btn btn-s" style="width:50px" onclick="sendReceipt('${id}', 'Monthly Fee', ${mFee})">WA</button>` : ""}
+            </div>
           </div>
           <div class="card">
             <p>Daily: ${isPD ? "<b>PAID</b>" : "DUE"}</p>
-            <button class="btn btn-dk" onclick="payD('${id}', ${isPD ? 0 : dFee})">${isPD ? "Undo" : "Pay Rs." + dFee}</button>
+            <div style="display:flex; gap:5px;">
+                <button class="btn btn-dk" onclick="payD('${id}', ${isPD ? 0 : dFee})">${isPD ? "Undo" : "Pay Rs." + dFee}</button>
+                ${isPD ? `<button class="btn btn-s" style="width:50px" onclick="sendReceipt('${id}', 'Daily Fee', ${pdAmt})">WA</button>` : ""}
+            </div>
           </div>
           <button class="btn btn-dk" style="margin-top:10px;" onclick="closeOverlays()">Close</button>`;
         document.getElementById("p-overlay").style.display = "block";
