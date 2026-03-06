@@ -756,13 +756,80 @@
         a.download = `Sipsayura_Backup.json`;
         a.click();
       }
-
       function printReport() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.text("Daily Summary", 10, 10);
-        doc.autoTable({ html: "#sum-table", startY: 20 });
-        doc.save("Report.pdf");
+        const date = document.getElementById("att-date").value;
+        const key = `${cs}_${cg}_${date}`;
+
+        // Header
+        doc.setFontSize(18);
+        doc.setTextColor(79, 70, 229); // Brand color
+        doc.text("SIPSAYURA ELITE", 14, 20);
+
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Daily Summary Report: ${date}`, 14, 30);
+        doc.text(`Grade: ${cg} | Subject: ${cs}`, 14, 37);
+
+        // Render Table
+        doc.autoTable({
+          html: "#sum-table",
+          startY: 45,
+          theme: "striped",
+          headStyles: { fillColor: [79, 70, 229] },
+          styles: { fontSize: 9 },
+        });
+
+        // Calculate Totals for PDF (Same logic as Summary UI)
+        let totalCollection = 0;
+        const studentsInClass = (db.students || []).filter(
+          (s) =>
+            s.g.toString() === cg.toString() &&
+            s.s.toString() === cs.toString(),
+        );
+
+        studentsInClass.forEach((s) => {
+          const isPM = db.fees?.[date.slice(0, 7)]?.[s.id]?.paid;
+          const attData = db.att?.[key] || { daily: {} };
+          const isPD = attData.daily ? attData.daily[s.id] || 0 : 0;
+          const mFee =
+            db.grades[cg] && db.grades[cg].mFee ? db.grades[cg].mFee : 1000;
+
+          if (isPM) totalCollection += mFee;
+          else if (isPD > 0) totalCollection += isPD;
+        });
+
+        const instituteFee = totalCollection * 0.2;
+        const teacherPayment = totalCollection * 0.8;
+
+        // Add Financial Breakdown to PDF
+        const finalY = doc.lastAutoTable.finalY + 15;
+
+        doc.setDrawColor(226, 232, 240);
+        doc.line(14, finalY - 5, 196, finalY - 5); // Separator line
+
+        doc.setFontSize(11);
+        doc.text(`Total Collection:`, 14, finalY);
+        doc.text(`Rs. ${totalCollection.toLocaleString()}`, 196, finalY, {
+          align: "right",
+        });
+
+        doc.setTextColor(239, 68, 68); // Red for deduction
+        doc.text(`Institute Fee (20%):`, 14, finalY + 7);
+        doc.text(`- Rs. ${instituteFee.toLocaleString()}`, 196, finalY + 7, {
+          align: "right",
+        });
+
+        doc.setFontSize(14);
+        doc.setTextColor(16, 185, 129); // Green for teacher payment
+        doc.setFont(undefined, "bold");
+        doc.text(`Teacher Payment (80%):`, 14, finalY + 18);
+        doc.text(`Rs. ${teacherPayment.toLocaleString()}`, 196, finalY + 18, {
+          align: "right",
+        });
+
+        doc.save(`Summary_${cg}_${cs}_${date}.pdf`);
       }
     </script>
   </body>
