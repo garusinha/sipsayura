@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Sipsayura Elite - V36.4 Fixed</title>
+    <title>Sipsayura Elite - V36.5 Management</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -136,6 +136,10 @@
       }
       .btn-s {
         background: var(--s);
+        color: white;
+      }
+      .btn-d {
+        background: var(--d);
         color: white;
       }
       .btn-dk {
@@ -396,7 +400,6 @@
         }
       }
 
-      // Check login status on load
       window.onload = function () {
         if (sessionStorage.getItem("auth_sip") === "true") {
           document.getElementById("login-screen").style.display = "none";
@@ -494,7 +497,6 @@
         save();
       }
 
-      // For payment receipts
       function sendReceipt(id, type, amount) {
         const s = db.students.find((x) => x.id === id);
         const date = document.getElementById("att-date").value;
@@ -515,6 +517,7 @@
         if (phone.startsWith("0")) phone = "94" + phone.substring(1);
         window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
       }
+
       function sendWA(id, status) {
         const s = db.students.find((x) => x.id === id);
         const date = document.getElementById("att-date").value;
@@ -526,14 +529,13 @@
           `Status: *${status}*%0A%0A` +
           `Thank you.`;
 
-        // Clean phone number (remove spaces/dashes)
         let phone = s.ph.replace(/\D/g, "");
-        // Add country code if not present (assuming Sri Lanka +94)
         if (phone.length === 9) phone = "94" + phone;
         if (phone.startsWith("0")) phone = "94" + phone.substring(1);
 
         window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
       }
+
       function getLastClassDate(currentDate) {
         const dates = Object.keys(db.att)
           .filter((k) => k.startsWith(`${cs}_${cg}_`))
@@ -542,6 +544,7 @@
           .sort();
         return dates.length > 0 ? dates[dates.length - 1] : null;
       }
+
       function renderMonthlyReport() {
         const month = document.getElementById("rep-month").value;
         if (!month) return;
@@ -564,12 +567,10 @@
             let paid = 0;
             let type = "Pending";
 
-            // Check Monthly
             if (db.fees[month]?.[s.id]?.paid) {
               paid = db.grades[cg]?.mFee || 1000;
               type = "Monthly";
             } else {
-              // Check all Daily payments for this month
               Object.keys(db.att).forEach((key) => {
                 if (
                   key.startsWith(`${cs}_${cg}_${month}`) &&
@@ -592,6 +593,7 @@
 
         document.getElementById("monthly-report-area").innerHTML = html;
       }
+
       function render() {
         if (document.getElementById("v-dash").style.display === "none") return;
 
@@ -624,16 +626,12 @@
           const isPD = db.att?.[key]?.daily?.[s.id] > 0;
 
           let st = `<span class="badge badge-due">ABSENT</span>`;
-          let statusText = "Absent";
           if (isPM) {
             st = `<span class="badge badge-paid">MONTHLY</span>`;
-            statusText = "Present (Monthly Paid)";
           } else if (isPD) {
             st = `<span class="badge badge-day">PAID DAY</span>`;
-            statusText = "Present (Daily Paid)";
           } else if (isP) {
             st = `<span class="badge" style="background:#e0e7ff; color:#3730a3">PRESENT</span>`;
-            statusText = "Present (Fees Due)";
           }
 
           dom.innerHTML += `<div class="std-row">
@@ -704,8 +702,39 @@
                 ${isPD ? `<button class="btn btn-s" style="width:50px" onclick="sendReceipt('${id}', 'Daily Fee', ${pdAmt})">WA</button>` : ""}
             </div>
           </div>
+          
+          <div class="card" style="border: 1px dashed #cbd5e1; background: #fdfdfd;">
+            <p style="font-weight:700; color: #64748b; margin-top:0">Manage Student</p>
+            <label style="font-size:10px; color:#64748b">WhatsApp Number:</label>
+            <input type="tel" id="edit-ph-${id}" value="${s.ph}" style="margin-top:5px">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+              <button class="btn btn-s" onclick="updatePhone('${id}')">Update Info</button>
+              <button class="btn btn-d" onclick="deleteStudent('${id}')">Delete Student</button>
+            </div>
+          </div>
+          
           <button class="btn btn-dk" style="margin-top:10px;" onclick="closeOverlays()">Close</button>`;
         document.getElementById("p-overlay").style.display = "block";
+      }
+
+      function updatePhone(id) {
+        const newPh = document.getElementById(`edit-ph-${id}`).value;
+        const idx = db.students.findIndex((s) => s.id === id);
+        if (idx !== -1 && newPh) {
+          db.students[idx].ph = newPh;
+          save();
+          alert("Contact updated successfully.");
+          openProfile(id);
+        }
+      }
+
+      function deleteStudent(id) {
+        if (confirm("Are you sure you want to delete this student? All record association for this student will be lost from the active list.")) {
+          db.students = db.students.filter((s) => s.id !== id);
+          save();
+          closeOverlays();
+          render();
+        }
       }
 
       function payD(id, amt) {
@@ -730,6 +759,7 @@
         save();
         openProfile(id);
       }
+
       function openSummary() {
         const date = document.getElementById("att-date").value;
         const key = `${cs}_${cg}_${date}`;
@@ -760,7 +790,6 @@
           const isP = attData.p ? attData.p.includes(s.id) : false;
           if (isP) presentCount++;
 
-          // Arrears Logic
           if (prevKey) {
             const wasP = db.att[prevKey]?.p?.includes(s.id);
             const wasPD = db.att[prevKey]?.daily?.[s.id] > 0;
@@ -790,7 +819,6 @@
           html += `<tr style="color:${rowColor}; border-bottom:1px solid #ddd;"><td style="padding:8px">${s.name}</td><td>${attStatus}</td><td>${status}</td><td>${amt > 0 ? amt : "-"}</td></tr>`;
         });
 
-        const totalCollection = dailyCash + monthlyTotal;
         html += `</table>`;
         document.getElementById("sum-area").innerHTML = html;
 
@@ -802,6 +830,7 @@
             </div>`
             : "";
 
+        const totalCollection = dailyCash + monthlyTotal;
         document.getElementById("sum-fin").innerHTML = `
             ${arrearsHTML}
             <div style="margin-top:15px; padding:15px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px;">
@@ -813,6 +842,7 @@
             </div>`;
         document.getElementById("s-overlay").style.display = "block";
       }
+
       function register() {
         const n = document.getElementById("reg-n").value;
         const p = document.getElementById("reg-ph").value;
@@ -874,6 +904,7 @@
         a.download = `Sipsayura_Backup.json`;
         a.click();
       }
+
       function printReport() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -902,7 +933,6 @@
 
         let finalY = doc.lastAutoTable.finalY + 10;
 
-        // Arrears List on PDF
         let arrearsList = [];
         const prevKey = prevDate ? `${cs}_${cg}_${prevDate}` : null;
         if (prevKey) {
@@ -937,7 +967,6 @@
           finalY += 18;
         }
 
-        // Financials (Reuse logic from UI to calculate totals)
         let dc = 0,
           mt = 0;
         db.students
@@ -967,4 +996,3 @@
     </script>
   </body>
 </html>
-s
