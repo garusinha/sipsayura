@@ -314,15 +314,24 @@
 
           <div id="tab-rep" style="display: none">
             <div class="card">
-              <input
-                type="month"
-                id="rep-month"
-                onchange="renderMonthlyReport()"
-              />
+              <div style="display: flex; gap: 10px; margin-bottom: 10px">
+                <input
+                  type="month"
+                  id="rep-month"
+                  onchange="renderMonthlyReport()"
+                  style="margin-bottom: 0"
+                />
+                <button
+                  class="btn btn-p"
+                  onclick="printMonthlyReport()"
+                  style="width: 40%"
+                >
+                  Print PDF
+                </button>
+              </div>
               <div id="monthly-report-area"></div>
             </div>
           </div>
-
           <div id="tab-reg" style="display: none">
             <div class="card">
               <h3>Enroll Student</h3>
@@ -547,12 +556,22 @@
         if (!month) return;
 
         let total = 0;
-        let html = `<table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:12px;">
-                    <tr style="background:#eee;">
+        let paidHtml = `<h4>Paid Students</h4>
+                  <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:12px;">
+                    <tr style="background:#f1f5f9;">
                         <th style="padding:8px; text-align:left;">Student</th>
                         <th>Type</th>
                         <th>Amount</th>
                     </tr>`;
+
+        let unpaidHtml = `<h4 style="margin-top:20px; color:#dc2626;">Unpaid / Arrears</h4>
+                    <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:12px;">
+                    <tr style="background:#fef2f2;">
+                        <th style="padding:8px; text-align:left;">Student</th>
+                        <th>Status</th>
+                    </tr>`;
+
+        let hasUnpaid = false;
 
         db.students
           .filter(
@@ -562,14 +581,14 @@
           )
           .forEach((s) => {
             let paid = 0;
-            let type = "Pending";
+            let type = "";
 
             // Check Monthly
             if (db.fees[month]?.[s.id]?.paid) {
               paid = db.grades[cg]?.mFee || 1000;
               type = "Monthly";
             } else {
-              // Check all Daily payments for this month
+              // Check Daily payments
               Object.keys(db.att).forEach((key) => {
                 if (
                   key.startsWith(`${cs}_${cg}_${month}`) &&
@@ -583,14 +602,22 @@
 
             if (paid > 0) {
               total += paid;
-              html += `<tr style="border-bottom:1px solid #ddd;"><td style="padding:8px">${s.name}</td><td style="text-align:center">${type}</td><td style="text-align:center">${paid}</td></tr>`;
+              paidHtml += `<tr style="border-bottom:1px solid #eee;"><td style="padding:8px">${s.name}</td><td style="text-align:center">${type}</td><td style="text-align:center">${paid}</td></tr>`;
+            } else {
+              hasUnpaid = true;
+              unpaidHtml += `<tr style="border-bottom:1px solid #fee2e2;"><td style="padding:8px">${s.name}</td><td style="text-align:center; color:#dc2626;">No Payment</td></tr>`;
             }
           });
 
-        html += `<tr style="background:#f8fafc; font-weight:bold;"><td colspan="2" style="padding:8px">Total Collection</td><td style="text-align:center">Rs. ${total}</td></tr></table>`;
-        html += `<div style="margin-top:10px; color:var(--p);"><b>Net Profit (20%): Rs. ${(total * 0.2).toFixed(0)}</b></div>`;
+        paidHtml += `<tr style="background:#f8fafc; font-weight:bold;"><td colspan="2" style="padding:8px">Total Collection</td><td style="text-align:center">Rs. ${total}</td></tr></table>`;
+        unpaidHtml += `</table>`;
 
-        document.getElementById("monthly-report-area").innerHTML = html;
+        const profitHtml = `<div style="margin-top:15px; padding:10px; background:var(--dk); color:white; border-radius:10px;">
+                        <b>Net Profit (20%): Rs. ${(total * 0.2).toFixed(0)}</b>
+                      </div>`;
+
+        document.getElementById("monthly-report-area").innerHTML =
+          paidHtml + (hasUnpaid ? unpaidHtml : "") + profitHtml;
       }
       function render() {
         if (document.getElementById("v-dash").style.display === "none") return;
@@ -603,6 +630,9 @@
         const month = date.slice(0, 7);
         const key = `${cs}_${cg}_${date}`;
 
+        const prevDate = getLastClassDate(date);
+        const prevKey = prevDate ? `${cs}_${cg}_${prevDate}` : null;
+
         const list = (db.students || []).filter(
           (s) =>
             s.g &&
@@ -611,6 +641,7 @@
             s.s.toString() === cs.toString() &&
             s.name.toLowerCase().includes(q),
         );
+
         const dom = document.getElementById("dom-list");
         dom.innerHTML = "";
 
@@ -619,37 +650,263 @@
           `<div class="lock-msg" style="background:${lock.ok ? "#f0fdf4" : "#fff1f2"}; color:${lock.ok ? "#166534" : "#991b1b"}">${lock.msg}</div>`;
 
         list.forEach((s) => {
-          const isP = db.att?.[key]?.p?.includes(s.id);
-          const isPM = db.fees?.[month]?.[s.id]?.paid;
-          const isPD = db.att?.[key]?.daily?.[s.id] > 0;
+          const isPresent = db.att?.[key]?.p?.includes(s.id);
+          const isPaidMonthly = db.fees?.[month]?.[s.id]?.paid;
+          const isPaidDaily = db.att?.[key]?.daily?.[s.id] > 0;
 
-          let st = `<span class="badge badge-due">ABSENT</span>`;
-          let statusText = "Absent";
-          if (isPM) {
-            st = `<span class="badge badge-paid">MONTHLY</span>`;
-            statusText = "Present (Monthly Paid)";
-          } else if (isPD) {
-            st = `<span class="badge badge-day">PAID DAY</span>`;
-            statusText = "Present (Daily Paid)";
-          } else if (isP) {
-            st = `<span class="badge" style="background:#e0e7ff; color:#3730a3">PRESENT</span>`;
-            statusText = "Present (Fees Due)";
+          // --- Strict Arrears Logic ---
+          let arrearsAmt = 0;
+          if (prevKey) {
+            const wasPresentPrev = db.att[prevKey]?.p?.includes(s.id);
+            const paidDailyPrev = db.att[prevKey]?.daily?.[s.id] > 0;
+            const paidMonthlyPrev =
+              db.fees?.[prevDate.slice(0, 7)]?.[s.id]?.paid;
+
+            // If they attended last time but didn't pay daily AND didn't have a monthly pass
+            if (wasPresentPrev && !paidDailyPrev && !paidMonthlyPrev) {
+              arrearsAmt = db.grades[cg]?.mFee || 250;
+            }
           }
 
-          dom.innerHTML += `<div class="std-row">
-    <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer;"><b>${s.name.toUpperCase()}</b><br>${st}</div>
-    <div style="display:flex; align-items:center; gap:10px;">
-        ${
-          isP
-            ? `<button onclick="sendWA('${s.id}', 'Present')" style="border:none; background:none; cursor:pointer;">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="24" height="24">
-        </button>`
-            : ""
-        }
-        <input type="checkbox" style="width:22px; height:22px" ${isP ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
-    </div>
-</div>`;
+          // Determine Badge Status
+          let st = `<span class="badge badge-due">ABSENT</span>`;
+          if (isPaidMonthly) {
+            st = `<span class="badge badge-paid">MONTHLY PASS</span>`;
+          } else if (isPaidDaily) {
+            st = `<span class="badge badge-day">PAID FOR TODAY</span>`;
+          } else if (isPresent) {
+            st = `<span class="badge" style="background:#fee2e2; color:#b91c1c">UNPAID</span>`;
+          }
+
+          dom.innerHTML += `
+      <div class="std-row">
+        <div onclick="openProfile('${s.id}')" style="flex:1; cursor:pointer;">
+            <div style="display:flex; align-items:center; gap:5px;">
+                <b style="color:${isPresent ? "var(--p)" : "inherit"}">${s.name.toUpperCase()}</b>
+                ${arrearsAmt > 0 ? `<span style="font-size:8px; background:#f43f5e; color:white; padding:1px 4px; border-radius:4px;">DUE: Rs.${arrearsAmt}</span>` : ""}
+            </div>
+            ${st}
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            ${isPresent ? `<button onclick="sendWA('${s.id}', 'Present')" style="border:none; background:none; cursor:pointer;"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="22" height="22"></button>` : ""}
+            <input type="checkbox" style="width:24px; height:24px" ${isPresent ? "checked" : ""} onchange="markAtt('${s.id}', this.checked)">
+        </div>
+      </div>`;
         });
+      }
+
+      // Replace the History Generation part inside your openProfile function with this:
+
+      function openProfile(id) {
+        const s = db.students.find((x) => x.id === id);
+        const date = document.getElementById("att-date").value;
+        const month = date.slice(0, 7);
+        const key = `${cs}_${cg}_${date}`;
+
+        // Check current status for the UI buttons
+        const isPM = db.fees?.[month]?.[id]?.paid || false;
+        const isPD = db.att?.[key]?.daily?.[id] > 0 || false;
+        const mFee = db.grades[cg]?.mFee || 1000;
+        const dFee = 250; // You can change this to db.grades[cg]?.dFee if you add it later
+
+        // Generate History: Show if they paid specifically for that day or via monthly pass
+        const historyKeys = Object.keys(db.att)
+          .filter((k) => k.startsWith(`${cs}_${cg}_`))
+          .sort()
+          .reverse()
+          .slice(0, 8);
+
+        let histHtml = historyKeys
+          .map((k) => {
+            const d = k.split(`${cs}_${cg}_`)[1];
+            const currentMonth = d.slice(0, 7);
+            const attended = db.att[k].p.includes(id) ? "✅" : "❌";
+
+            let payStatus = '<span style="color: #d91e18;">⏳ Due</span>';
+            let amtDisplay = "";
+
+            // Logic: Monthly covers any date in that month, Daily covers ONLY that specific key
+            if (db.fees?.[currentMonth]?.[id]?.paid) {
+              payStatus = '<span style="color: #16a34a;">💰 Monthly</span>';
+              amtDisplay = `(Rs.${mFee})`;
+            } else if (db.att[k].daily?.[id] > 0) {
+              payStatus = '<span style="color: #0891b2;">💵 Daily</span>';
+              amtDisplay = `(Rs.${db.att[k].daily[id]})`;
+            }
+
+            return `
+        <div style="font-size:10px; display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px 0;">
+            <span style="font-weight:600;">${d}</span>
+            <span>Att: ${attended}</span>
+            <span>${payStatus} ${amtDisplay}</span>
+        </div>`;
+          })
+          .join("");
+
+        document.getElementById("p-content").innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+      <h3 style="margin:0">${s.name.toUpperCase()}</h3>
+      <button onclick="unlockAdminActions('${id}')" id="admin-lock-btn" style="background:#f1f5f9; border:1px solid #e2e8f0; padding:4px 8px; border-radius:6px; font-size:10px;">🔓 Admin</button>
+    </div>
+
+    <div id="admin-panel" style="display:none; background:#fff1f2; padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid #fecaca;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <b style="font-size:11px; color:#991b1b;">ADMIN CONTROLS</b>
+          <button onclick="deleteStudent('${id}')" style="background:#dc2626; color:white; border:none; padding:3px 8px; border-radius:4px; font-size:9px;">DELETE</button>
+      </div>
+      <input type="text" id="edit-name" value="${s.name}" placeholder="Name" style="padding:6px; font-size:11px; margin-bottom:5px;">
+      <input type="tel" id="edit-ph" value="${s.ph}" placeholder="WhatsApp" style="padding:6px; font-size:11px; margin-bottom:5px;">
+      <button class="btn btn-dk" onclick="updateStudent('${id}')" style="padding:5px; font-size:10px; background:#475569;">Update Student Details</button>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+      <div class="card" style="margin:0; padding:10px; border: 1.5px solid ${isPM ? "#10b981" : "#f1f5f9"}">
+          <p style="margin:0 0 5px 0; font-size:11px; font-weight:bold;">Monthly Fee</p>
+          <button class="btn ${isPM ? "btn-s" : "btn-p"}" onclick="payM('${id}', ${!isPM})" style="font-size:10px; padding:6px;">
+            ${isPM ? "✅ Monthly Paid" : "Pay Monthly (" + mFee + ")"}
+          </button>
+      </div>
+      <div class="card" style="margin:0; padding:10px; border: 1.5px solid ${isPD ? "#4f46e5" : "#f1f5f9"}">
+          <p style="margin:0 0 5px 0; font-size:11px; font-weight:bold;">Daily Fee</p>
+          <button class="btn ${isPD ? "btn-p" : "btn-dk"}" onclick="payD('${id}', ${isPD ? 0 : dFee})" style="font-size:10px; padding:6px;">
+            ${isPD ? "✅ Daily Paid" : "Pay Daily (" + dFee + ")"}
+          </button>
+      </div>
+    </div>
+
+    <div style="background:#f0f9ff; padding:10px; border-radius:10px; border:1px solid #bae6fd;">
+      <p style="margin:0 0 8px 0; font-weight:800; font-size:11px; color:#0369a1;">ATTENDANCE & PAYMENT HISTORY</p>
+      <div style="max-height:150px; overflow-y:auto;">
+          ${histHtml || '<p style="font-size:10px; color:#0369a1;">No records found.</p>'}
+      </div>
+    </div>
+
+    <button class="btn btn-dk" style="margin-top:15px;" onclick="closeOverlays()">Close</button>`;
+
+        document.getElementById("p-overlay").style.display = "block";
+      }
+
+      function unlockAdminActions(id) {
+        const pin = prompt("Enter Admin PIN to edit/delete:");
+        if (pin === "2705") {
+          document.getElementById("admin-panel").style.display = "block";
+          document.getElementById("admin-lock-btn").style.display = "none";
+        } else {
+          alert("Incorrect PIN");
+        }
+      }
+      function printMonthlyReport() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const month = document.getElementById("rep-month").value;
+        if (!month) return alert("Select month");
+
+        doc.setFontSize(18);
+        doc.text("MONTHLY FINANCIAL SUMMARY", 14, 20);
+        doc.setFontSize(11);
+        doc.text(`Month: ${month} | Grade: ${cg} | Subject: ${cs}`, 14, 28);
+
+        let totalCollection = 0;
+        const paidRows = [];
+        const unpaidRows = [];
+
+        const classStudents = db.students.filter(
+          (s) =>
+            s.g.toString() === cg.toString() &&
+            s.s.toString() === cs.toString(),
+        );
+
+        classStudents.forEach((s) => {
+          let amt = 0;
+          let type = "Unpaid";
+
+          if (db.fees[month]?.[s.id]?.paid) {
+            amt = db.grades[cg]?.mFee || 1000;
+            type = "Monthly Pass";
+          } else {
+            Object.keys(db.att).forEach((key) => {
+              if (
+                key.startsWith(`${cs}_${cg}_${month}`) &&
+                db.att[key].daily?.[s.id]
+              ) {
+                amt += db.att[key].daily[s.id];
+                type = "Daily Total";
+              }
+            });
+          }
+
+          if (amt > 0) {
+            totalCollection += amt;
+            paidRows.push([s.name.toUpperCase(), type, `Rs. ${amt}`]);
+          } else {
+            unpaidRows.push([s.name.toUpperCase(), "No Payment Recorded"]);
+          }
+        });
+
+        // Table 1: Paid Students
+        doc.text("PAID RECEIPTS", 14, 38);
+        doc.autoTable({
+          head: [["Student", "Type", "Amount"]],
+          body: paidRows,
+          startY: 42,
+          theme: "striped",
+          headStyles: { fillColor: [16, 185, 129] }, // Green
+        });
+
+        // Table 2: Unpaid Students
+        let finalY = doc.lastAutoTable.finalY + 10;
+        if (unpaidRows.length > 0) {
+          doc.setTextColor(220, 38, 38);
+          doc.text("UNPAID / ARREARS LIST", 14, finalY);
+          doc.autoTable({
+            head: [["Student Name", "Status"]],
+            body: unpaidRows,
+            startY: finalY + 4,
+            theme: "grid",
+            headStyles: { fillColor: [220, 38, 38] }, // Red
+          });
+          finalY = doc.lastAutoTable.finalY + 10;
+        }
+
+        // Final Total
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.text(`Total Collection: Rs. ${totalCollection}`, 14, finalY);
+        doc.text(
+          `Net Profit (20%): Rs. ${(totalCollection * 0.2).toFixed(0)}`,
+          14,
+          finalY + 7,
+        );
+
+        doc.save(`Monthly_Summary_${month}.pdf`);
+      }
+
+      function updateStudent(id) {
+        const newName = document.getElementById("edit-name").value;
+        const newPh = document.getElementById("edit-ph").value;
+        const idx = db.students.findIndex((s) => s.id === id);
+        if (idx !== -1) {
+          db.students[idx].name = newName;
+          db.students[idx].ph = newPh;
+          save();
+          alert("Details updated successfully");
+          render();
+          document.getElementById("admin-panel").style.display = "none";
+          document.getElementById("admin-lock-btn").style.display = "block";
+        }
+      }
+
+      function deleteStudent(id) {
+        if (
+          confirm(
+            "PERMANENT DELETE: Are you sure you want to remove this student?",
+          )
+        ) {
+          db.students = db.students.filter((s) => s.id !== id);
+          save();
+          closeOverlays();
+          render();
+        }
       }
 
       function checkLock() {
@@ -673,39 +930,6 @@
         if (days[now.getDay()] !== s.day)
           return { ok: false, msg: "Wrong Day" };
         return { ok: true, msg: "Class Time Active" };
-      }
-
-      function openProfile(id) {
-        const s = db.students.find((x) => x.id === id);
-        const date = document.getElementById("att-date").value;
-        const month = date.slice(0, 7);
-        const key = `${cs}_${cg}_${date}`;
-
-        const isPM = db.fees?.[month]?.[id]?.paid || false;
-        const isPD = db.att?.[key]?.daily?.[id] > 0 || false;
-        const pdAmt = db.att?.[key]?.daily?.[id] || 0;
-        const mFee =
-          db.grades[cg] && db.grades[cg].mFee ? db.grades[cg].mFee : 1000;
-        const dFee = 250;
-
-        document.getElementById("p-content").innerHTML = `
-          <h3>${s.name.toUpperCase()}</h3>
-          <div class="card">
-            <p>Monthly: ${isPM ? "<b>PAID</b>" : "DUE"}</p>
-            <div style="display:flex; gap:5px;">
-                <button class="btn btn-p" onclick="payM('${id}', ${!isPM})">${isPM ? "Undo" : "Pay Rs." + mFee}</button>
-                ${isPM ? `<button class="btn btn-s" style="width:50px" onclick="sendReceipt('${id}', 'Monthly Fee', ${mFee})">WA</button>` : ""}
-            </div>
-          </div>
-          <div class="card">
-            <p>Daily: ${isPD ? "<b>PAID</b>" : "DUE"}</p>
-            <div style="display:flex; gap:5px;">
-                <button class="btn btn-dk" onclick="payD('${id}', ${isPD ? 0 : dFee})">${isPD ? "Undo" : "Pay Rs." + dFee}</button>
-                ${isPD ? `<button class="btn btn-s" style="width:50px" onclick="sendReceipt('${id}', 'Daily Fee', ${pdAmt})">WA</button>` : ""}
-            </div>
-          </div>
-          <button class="btn btn-dk" style="margin-top:10px;" onclick="closeOverlays()">Close</button>`;
-        document.getElementById("p-overlay").style.display = "block";
       }
 
       function payD(id, amt) {
